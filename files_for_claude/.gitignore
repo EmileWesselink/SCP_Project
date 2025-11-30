@@ -1,0 +1,21 @@
+# Ignore all PDF files
+*.pdf
+
+# Ignore Word documents
+*.doc
+*.docx
+
+# Ignore PowerPoint files
+*.ppt
+*.pptx
+
+# Ignore Excel files
+*.xls
+*.xlsx
+
+# Ignore other common document formats
+*.txt
+*.rtf
+*.odt
+*.ods
+*.odp
