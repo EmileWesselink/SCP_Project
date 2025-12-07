@@ -1,0 +1,222 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preconnect" href="https://rsms.me/"/><link rel="modulepreload" href="/assets/entry.client-B7A0FQne.js"/><link rel="modulepreload" href="/assets/jsx-runtime-u17CrQMm.js"/><link rel="modulepreload" href="/assets/chunk-4WY6JWTD-xdnq9X6J.js"/><link rel="modulepreload" href="/assets/index-DsKzQ1_M.js"/><link rel="modulepreload" href="/assets/root-CNDFascm.js"/><link rel="modulepreload" href="/assets/match-DF78MJVZ.js"/><link rel="modulepreload" href="/assets/oidc-client-ts-dScR5oCa.js"/><link rel="modulepreload" href="/assets/react-oidc-context-A4qyHIeL.js"/><link rel="modulepreload" href="/assets/getOidcConfig-mUPAfBCk.js"/><link rel="modulepreload" href="/assets/capacity-map-provider-BxpUI4NL.js"/><link rel="modulepreload" href="/assets/map-provider-D6pJRAFA.js"/><link rel="modulepreload" href="/assets/MapLayout-Bc_-FZ95.js"/><link rel="modulepreload" href="/assets/MapRoot-xteRDmls.js"/><link rel="modulepreload" href="/assets/map-search-provider-CeguJB76.js"/><link rel="modulepreload" href="/assets/page-d_T3GdeU.js"/><link rel="modulepreload" href="/assets/capacity-map-layer-titles-BcFfvykP.js"/><link rel="modulepreload" href="/assets/dictionary-jRzBCSPP.js"/><link rel="modulepreload" href="/assets/legend-modal-DG9hmxXh.js"/><link rel="modulepreload" href="/assets/vertical-button-group-DiARc8AB.js"/><link rel="modulepreload" href="/assets/clsx-B-dksMZM.js"/><link rel="modulepreload" href="/assets/modal-BxPi7vi0.js"/><link rel="modulepreload" href="/assets/utils-ifGBDgnm.js"/><link rel="modulepreload" href="/assets/preload-helper-BXl3LOEh.js"/><link rel="stylesheet" href="/assets/root-CenlMDiH.css"/><link rel="stylesheet" href="https://rsms.me/inter/inter.css"/><script>(function () {
+      if (typeof window === 'undefined') return;
+
+      var _paq = window._paq = window._paq || [];
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+
+      (function () {
+        var u = 'https://analytics.mijnenergiedata.nl/';
+        _paq.push(['setTrackerUrl', u + 'matomo.php']);
+        _paq.push(['setSiteId', '3']);
+        var d = document,
+          g = d.createElement('script'),
+          s = d.getElementsByTagName('script')[0];
+        g.async = true;
+        g.src = u + 'matomo.js';
+        s.parentNode.insertBefore(g, s);
+      })();
+    })();</script></head><body><main class="pt-16 p-4 container mx-auto"><h1>Oops!</h1><p>An unexpected error occurred.</p></main><script>((storageKey2, restoreKey) => {
+    if (!window.history.state || !window.history.state.key) {
+      let key = Math.random().toString(32).slice(2);
+      window.history.replaceState({ key }, "");
+    }
+    try {
+      let positions = JSON.parse(sessionStorage.getItem(storageKey2) || "{}");
+      let storedY = positions[restoreKey || window.history.state.key];
+      if (typeof storedY === "number") {
+        window.scrollTo(0, storedY);
+      }
+    } catch (error) {
+      console.error(error);
+      sessionStorage.removeItem(storageKey2);
+    }
+  })("react-router-scroll-positions", null)</script><script>window.__reactRouterContext = {"basename":"/","future":{"v8_middleware":false,"unstable_optimizeDeps":false,"unstable_splitRouteModules":false,"unstable_subResourceIntegrity":false,"unstable_viteEnvironmentApi":false},"routeDiscovery":{"mode":"lazy","manifestPath":"/__manifest"},"ssr":true,"isSpaMode":false};window.__reactRouterContext.stream = new ReadableStream({start(controller){window.__reactRouterContext.streamController = controller;}}).pipeThrough(new TextEncoderStream());</script><script type="module" async="">;
+import * as route0 from "/assets/root-CNDFascm.js";
+import * as route1 from "/assets/MapLayout-Bc_-FZ95.js";
+import * as route2 from "/assets/MapRoot-xteRDmls.js";
+import * as route3 from "/assets/page-d_T3GdeU.js";
+  window.__reactRouterManifest = {
+  "entry": {
+    "module": "/assets/entry.client-B7A0FQne.js",
+    "imports": [
+      "/assets/jsx-runtime-u17CrQMm.js",
+      "/assets/chunk-4WY6JWTD-xdnq9X6J.js",
+      "/assets/index-DsKzQ1_M.js"
+    ],
+    "css": []
+  },
+  "routes": {
+    "root": {
+      "id": "root",
+      "path": "",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasErrorBoundary": true,
+      "module": "/assets/root-CNDFascm.js",
+      "imports": [
+        "/assets/jsx-runtime-u17CrQMm.js",
+        "/assets/chunk-4WY6JWTD-xdnq9X6J.js",
+        "/assets/index-DsKzQ1_M.js",
+        "/assets/match-DF78MJVZ.js",
+        "/assets/oidc-client-ts-dScR5oCa.js",
+        "/assets/react-oidc-context-A4qyHIeL.js",
+        "/assets/getOidcConfig-mUPAfBCk.js",
+        "/assets/capacity-map-provider-BxpUI4NL.js",
+        "/assets/map-provider-D6pJRAFA.js"
+      ],
+      "css": [
+        "/assets/root-CenlMDiH.css"
+      ]
+    },
+    "components/routes/map-layout/MapLayout": {
+      "id": "components/routes/map-layout/MapLayout",
+      "parentId": "root",
+      "hasAction": false,
+      "hasLoader": false,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/MapLayout-Bc_-FZ95.js",
+      "imports": [
+        "/assets/jsx-runtime-u17CrQMm.js",
+        "/assets/chunk-4WY6JWTD-xdnq9X6J.js"
+      ],
+      "css": [
+        "/assets/MapLayout-CFGoZRdQ.css"
+      ]
+    },
+    "maps/capacity-map/components/routes/map-root/MapRoot": {
+      "id": "maps/capacity-map/components/routes/map-root/MapRoot",
+      "parentId": "components/routes/map-layout/MapLayout",
+      "hasAction": false,
+      "hasLoader": false,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/MapRoot-xteRDmls.js",
+      "imports": [
+        "/assets/chunk-4WY6JWTD-xdnq9X6J.js",
+        "/assets/jsx-runtime-u17CrQMm.js",
+        "/assets/map-search-provider-CeguJB76.js",
+        "/assets/capacity-map-provider-BxpUI4NL.js"
+      ],
+      "css": []
+    },
+    "maps/capacity-map/components/routes/map-page/page": {
+      "id": "maps/capacity-map/components/routes/map-page/page",
+      "parentId": "maps/capacity-map/components/routes/map-root/MapRoot",
+      "path": "/capaciteitskaart/:mapName/:layerId",
+      "index": true,
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/page-d_T3GdeU.js",
+      "imports": [
+        "/assets/chunk-4WY6JWTD-xdnq9X6J.js",
+        "/assets/jsx-runtime-u17CrQMm.js",
+        "/assets/capacity-map-layer-titles-BcFfvykP.js",
+        "/assets/dictionary-jRzBCSPP.js",
+        "/assets/map-search-provider-CeguJB76.js",
+        "/assets/legend-modal-DG9hmxXh.js",
+        "/assets/vertical-button-group-DiARc8AB.js",
+        "/assets/capacity-map-provider-BxpUI4NL.js",
+        "/assets/clsx-B-dksMZM.js",
+        "/assets/modal-BxPi7vi0.js",
+        "/assets/utils-ifGBDgnm.js",
+        "/assets/preload-helper-BXl3LOEh.js",
+        "/assets/index-DsKzQ1_M.js"
+      ],
+      "css": [
+        "/assets/page-BcpH4B4i.css",
+        "/assets/legend-modal-D_JPfe0B.css",
+        "/assets/modal-CyzhIf9b.css",
+        "/assets/vertical-button-group-D__Tr4jW.css"
+      ]
+    },
+    "components/routes/layout/Layout": {
+      "id": "components/routes/layout/Layout",
+      "parentId": "root",
+      "hasAction": false,
+      "hasLoader": false,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/Layout-Cq8qq3cj.js",
+      "imports": [
+        "/assets/chunk-4WY6JWTD-xdnq9X6J.js",
+        "/assets/jsx-runtime-u17CrQMm.js",
+        "/assets/Container-BTzQjwqd.js",
+        "/assets/react-oidc-context-A4qyHIeL.js",
+        "/assets/bundle-mjs-BxlSfXgK.js",
+        "/assets/useHasRoles-CJA-BDZx.js",
+        "/assets/Tabs-BrHQYO9Z.js",
+        "/assets/oidc-client-ts-dScR5oCa.js"
+      ],
+      "css": []
+    },
+    "components/routes/home/Home": {
+      "id": "components/routes/home/Home",
+      "parentId": "components/routes/layout/Layout",
+      "index": true,
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/Home-C9_ofEhP.js",
+      "imports": [
+        "/assets/chunk-4WY6JWTD-xdnq9X6J.js",
+        "/assets/jsx-runtime-u17CrQMm.js",
+        "/assets/dictionary-TGdgJsdb.js",
+        "/assets/icon-arrow-right-r7THVz09.js",
+        "/assets/icon-book-open-BiBs_R-8.js",
+        "/assets/Container-BTzQjwqd.js",
+        "/assets/SearchProductsForm-OSQgTMMG.js",
+        "/assets/GroupCard-BGO5-Ijs.js",
+        "/assets/bundle-mjs-BxlSfXgK.js",
+        "/assets/Button-B_t8BsAJ.js",
+        "/assets/SearchInput-D0sMh3TK.js",
+        "/assets/icon-cross-DzmKKKRz.js",
+        "/assets/Input-B9a6XCGM.js",
+        "/assets/icon-folder-V8fdeeL7.js",
+        "/assets/CardTitle-CVrEpwzr.js",
+        "/assets/MetadataItem-6_oYOpDU.js"
+      ],
+      "css": []
+    },
+    "maps/capacity-map/components/routes/index": {
+      "id": "maps/capacity-map/components/routes/index",
+      "parentId": "maps/capacity-map/components/routes/map-root/MapRoot",
+      "path": "/capaciteitskaart",
+      "index": true,
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/index-AhUOuYrh.js",
+      "imports": [
+        "/assets/chunk-4WY6JWTD-xdnq9X6J.js"
+      ],
+      "css": []
+    }
+  },
+  "url": "/assets/manifest-0a79a8c4.js",
+  "version": "0a79a8c4"
+};
+  window.__reactRouterRouteModules = {"root":route0,"components/routes/map-layout/MapLayout":route1,"maps/capacity-map/components/routes/map-root/MapRoot":route2,"maps/capacity-map/components/routes/map-page/page":route3};
+
+import("/assets/entry.client-B7A0FQne.js");</script><!--$--><script>window.__reactRouterContext.streamController.enqueue("[{\"_1\":2,\"_32\":-5,\"_33\":34},\"loaderData\",{\"_3\":4},\"root\",{\"_5\":6,\"_7\":8,\"_28\":29},\"featureFlags\",{},\"config\",{\"_9\":10,\"_11\":12,\"_13\":14,\"_15\":16,\"_17\":18,\"_19\":20,\"_24\":25,\"_26\":27},\"ENVIRONMENT\",\"prd\",\"AUTH_IDP_URI\",\"https://idp.cmf.energysector.nl\",\"AUTH_CLIENT_ID\",\"data-portal-oauth-client\",\"BASE_URL\",\"https://data.partnersinenergie.nl\",\"SENTRY_DSN\",\"https://9f2df53bdaae125c7aa311788f793b62@o4507707929985024.ingest.de.sentry.io/4508597511454800\",\"HOME_THEMES\",[21,22,23],\"d6c26292-e592-4b13-a2c9-d49003389936\",\"0d9b07f6-7340-4578-8bbf-7013dbab5790\",\"416c6b37-23b5-499d-953b-3f9b90f52e55\",\"GROEN_GAS_TILES_URL\",\"https://api.maptiler.com/tiles/0199f26a-22da-7dbe-844d-64db2f3d6bf2/tiles.json?key=LsAKfag3t3bTv3H1zlTP\",\"CAPACITEITSKAART_TILES_URL\",\"https://api.maptiler.com/tiles/105ba28a-afb8-4232-ac3d-0b40bf3fc76c/tiles.json?key=LsAKfag3t3bTv3H1zlTP\",\"sentryConfig\",{\"_30\":18,\"_31\":10},\"dsn\",\"environment\",\"actionData\",\"errors\",{\"_3\":35},{\"_36\":37,\"_38\":-7,\"_39\":40},\"message\",\"Unexpected Server Error\",\"stack\",\"__type\",\"Error\"]\n");</script><!--$--><script>window.__reactRouterContext.streamController.close();</script><!--/$--><!--/$--></body></html>

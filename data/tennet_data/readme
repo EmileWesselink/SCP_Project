@@ -1,0 +1,113 @@
+versie 2.0
+2024-11-20
+
+De .csv bestanden bevatten de brondata van de netbeheerders met betrekking tot het capaciteitskaart.
+Hier leggen we kort uit wat u hierin kunt vinden en waar de gegeven informatie voor staat.
+
+De bestanden zijn puntkomma gescheiden en gebruiken een komma als decimaalteken.
+
+	congestie_pc6
+		postcode
+			6 karakter lange postcode waar de gegeven informatie over gaat
+		afname (kleurcode)
+			-1	Geen beschikbare informatie
+			0	Transparant
+			1	Geel
+			2	Oranje
+			3	Rood
+		opwek (kleurcode)
+			-1	Geen beschikbare informatie
+			0	Transparant
+			1	Geel
+			2	Oranje
+			3	Rood
+		voedingsgebied_id
+			Uniek identifier van het gebied van de regionale netbeheerder waaraan het postcode gebied gekoppeld kan worden
+		voedingsgebied_naam
+			Naam van het voedingsgebied die getoond wordt in de kaart
+		tennet_id
+			Unieke identifier van het tussenstation van TenneT waaraan het postcode gebied gekoppeld kan worden
+		RNB_postcode
+			De netbeheerder die (het grootste deel van) het postcode gebied in beheer heeft
+
+	voedingsgebieden
+		voedingsgebied_id
+			Unieke identifier van het voedingsgebied van de regionale netbeheerder waar de gegeven informatie over gaat
+		aanwezige_transportcapaciteit_invoeding
+			Maximale invoeding capaciteit dat het net in dit gebied aan kan in MW
+		aanwezige_transportcapaciteit_afname
+			Maximale afname capaciteit dat het net in dit gebied aan kan in MW
+		benodigde_transportcapaciteit_invoeding
+			Transportcapaciteit voor invoeding nodig in dit gebied tijdens spitsmomenten om transportovereenkomsten uit te voeren, in MW
+		benodigde_transportcapaciteit_afname
+			Transportcapaciteit voor afname nodig in dit gebied tijdens spitsmomenten om transportovereenkomsten uit te voeren, in MW
+		unieke_verzoeken_invoeding
+			Aantal unieke aanvragen (invoeding)
+		unieke_verzoeken_afname
+			Aantal unieke aanvragen (afname)
+		wachtrij_invoeding
+			Wachtrij in vermogen in MW (invoeding)
+		wachtrij_afname
+			Wachtrij in vermogen in MW (afname)
+		RNB
+			De netbeheerder die het voedingsgebied in beheer heeft
+		info
+			Additionele informatie die de regionale netbeheerder mee wil geven voor dit voedingsgebied
+
+	tennetgebieden
+		aanwezige_transportcapaciteit_invoeding
+			Maximale invoeding capaciteit dat het net in dit gebied aan kan in MW
+		aanwezige_transportcapaciteit_afname
+			Maximale afname capaciteit dat het net in dit gebied aan kan in MW
+		benodigde_transportcapaciteit_invoeding
+			Transportcapaciteit voor invoeding nodig in dit gebied tijdens spitsmomenten om transportovereenkomsten uit te voeren, in MW
+		benodigde_transportcapaciteit_afname
+			Transportcapaciteit voor afname nodig in dit gebied tijdens spitsmomenten om transportovereenkomsten uit te voeren, in MW
+		unieke_verzoeken_invoeding
+			Aantal unieke aanvragen (invoeding)
+		unieke_verzoeken_afname
+			Aantal unieke aanvragen (afname)
+		wachtrij_invoeding
+			Wachtrij in vermogen in MW (invoeding)
+		wachtrij_afname
+			Wachtrij in vermogen in MW (afname)
+		congestiegebied
+			Het betreffende congestiegebied van TenneT waar de informatie over gaat
+		info
+			Additionele informatie die TenneT mee wil geven voor dit gebied
+
+	tennetcongestie
+		tennet_id
+			Unieke identifier van het tussenstation van TenneT
+		congestiegebied_afname
+			Het congestiegebied van TenneT waar dit tussenstation aan gekoppeld kan worden voor afname
+		congestiegebied_opwek
+			Het congestiegebied van TenneT waar dit tussenstation aan gekoppeld kan worden voor invoeding
+		afname (kleurcode)
+			-1	Geen beschikbare informatie
+			0	Transparant
+			1	Geel
+			2	Oranje
+			3	Rood
+		opwek (kleurcode)
+			-1	Geen beschikbare informatie
+			0	Transparant
+			1	Geel
+			2	Oranje
+			3	Rood
+
+	projecten
+		projectnaam
+			Naam en/of korte beschrijving van de netuitbreiding
+		gebied_id
+			Het voedings- of congestiegebied waar het project uitgevoerd wordt
+		kwartaal
+			Kwartaal van oplevering
+		jaar
+			Jaar van oplevering
+		beschrijving
+			Bron van het project
+		einddatum
+			Verwachte datum van oplevering
+		netbeheerder
+			De (regionale) netbeheerder die dit project overziet

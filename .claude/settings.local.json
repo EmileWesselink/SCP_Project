@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(curl:*)",
+      "Bash(dir \"C:\\Users\\tobia\\Documents\\GitHub\\SCP_Project\" /A -B)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

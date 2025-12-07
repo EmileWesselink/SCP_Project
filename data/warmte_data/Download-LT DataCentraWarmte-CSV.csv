@@ -1,0 +1,134 @@
+fid;PK_UID;BEDRIJF;ADRES;HUISNR;WOONPLAATS;Postcode;klasse;categorie;NETTO_OPP;VERMOGEN;E_VERBRUIK;WA_LT;WA_LT_POT;RESTW_TEMP;UITKOPPEL;X;Y
+1;0;1Transvir;Rigastraat;18;Deventer;7418 EW;2;Klein;200-1000;<0,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;210725;472581
+2;9;Cellnex;Energieweg;2;Alphen a/d Rijn;2404 HE;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;104289;461229
+3;10;Cellnex;Louise Henriëttestraat;385;Den Haag;2595 TS;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;82939;455238
+4;11;Cellnex;Cornelisweg;10;Goes;4463 AK;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;50686;392388
+5;12;Cellnex;Koos Postemalaan;2;Hilversum;1217 ZC;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;140105;472603
+6;13;Cellnex;Van Veenstraat;26;Hoogersmilde;9423 VB;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;223382;546668
+7;14;Cellnex;Hogebiezendijk;21;Ijsselstein;3401 RS;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;132093;446907
+8;15;Cellnex;Larenseweg;58;Markelo;7475 PX;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;227027;472617
+9;16;Cellnex;Op de Meuleberg;7;Roermond;6041 NK;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;196164;355128
+10;17;Cogent;Haarlemmerstraatweg;133;Halfweg;1165 MK;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;109382;488727
+11;18;Colt;Van der Madeweg;12;Duivendrecht;1114 AM;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;123573;482358
+12;1;AtlasEdge;Van der Madeweg;12;Amsterdam;1114 AM;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;123573;482358
+13;19;Colt;Argonweg;9;Roosendaal;4706 NR;6;Middel-groot;10K-40K;25-100;44-176;30-120;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;93984;394865
+14;20;CyrusOne;Linieweg;1;Halfweg;1165 AA;6;Middel-groot;10K-40K;25-100;44-176;30-120;240-580;30-35;(2) uitkoppeling warmte is voorbereid;108437;488566
+15;21;Data Facilities;Moezel;5;Den Haag;2491 CV;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;86392;453410
+16;22;Data Facilities;Boyleweg;2;Spijkenisse;3208 KA;2;Klein;200-1000;0,5-2,5;4,4-8,8;3-6;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;80231;430207
+17;23;Databarn;Zekeringstraat;35;Amsterdam;1014 BV;3;Klein;1000-2000;0,5-2,5;8,8-22;3-6;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;118514;489977
+18;24;Databarn;Rivium Boulevard;62;Capelle a/d Ijssel;2909 LK;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;97167;436083
+19;25;Datacenter Almere;Randstad;22, Nr. 153;Almere;1314 BB;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;144094;487829
+20;26;Datacenter Fryslan;Archimedesweg;3;Leeuwarden;8912 AK;1;Klein;<200;<0,5;0,9-4,4;0,6-3;<1,2;20-25;(4) uitkoppeling pas mogelijk na een grote investering;179959;578499
+21;27;Datacenter Fryslan;Francois Haverschmidtwei;3;Leeuwarden;8914 BC;2;Klein;200-1000;<0,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;180224;579854
+22;28;Datacenter Groningen;Beneluxweg;4;Zuidbroek;9636 HV;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;253805;576605
+23;2;Atom86;Boeing Avenue;271;Schiphol-Rijk;1119 PD;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;111566;476520
+24;29;Datacenter Noordholland;Professor van der Waalstraat;1;Alkmaar;1821 BT;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;113242;515529
+25;30;DataOne;Bruynvisweg;11;Wormer;1531 AX;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;114959;500964
+26;31;Dataplace;Van Coulsterweg;6;Alblasserdam;2952 CB;3;Klein;1000-2000;2,5-5;8,8-22;6-15;12-30;20-25;(3) uitkoppeling van warmte vraagt enige investering;106208;428826
+27;32;Dataplace;Tivolilaan;251;Arnhem;6824 BV;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(3) uitkoppeling van warmte vraagt enige investering;192561;444435
+28;33;Dataplace;Koningin Wilhelminaweg;471;Groenekan;3737 BE;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;12-30;20-25;(3) uitkoppeling van warmte vraagt enige investering;138344;459472
+29;34;Dataplace;Parellaan;9;Hoofddorp;2132 WS;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(3) uitkoppeling van warmte vraagt enige investering;107236;478274
+30;35;Dataplace;Drukkerij;6;Steenbergen;4651 SL;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(3) uitkoppeling van warmte vraagt enige investering;80006;400404
+31;36;Dataplace;Gragtmansstraat;1B;Waalwijk;5145 RA;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(3) uitkoppeling van warmte vraagt enige investering;130884;411935
+32;37;Interxion;Gyroscoopweg;58;Amsterdam;1042 AC;2;Klein;200-1000;<0,5;<0,9;<0,6;1,2-6;onbekend;(4) uitkoppeling pas mogelijk na een grote investering;117950;490363
+33;38;Interxion;Cessnalaan;1-33;Schiphol-Rijk;1119 NJ;4;Middel-klein;2000-5000;0,5-2,5;8,8-22;6-15;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;112952;477537
+34;3;BIT;Galileïlaan;19;Ede;6716 BP;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(1) uitkoppeling wamte vindt al plaats;171270;448819
+35;39;Interxion;Tupolevlaan;101;Schiphol-Rijk;1119 PA;4;Middel-klein;2000-5000;5-12;22-44;15-30;30-60;20-25;(2) uitkoppeling warmte is voorbereid;111808;477084
+36;40;Interxion;Koolhovenlaan;25;Schiphol-Rijk;1119 NB;4;Middel-klein;2000-5000;5-12;onbekend;onbekend;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;112612;477662
+37;41;Interxion;Cessnalaan;50;Schiphol-Rijk;1119 NL;5;Middel-klein;5000-10K;12-25;44-176;30-120;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;112589;477228
+38;42;Interxion;Pudongweg;37;Rozenburg;1437 EM;5;Middel-klein;5000-10K;12-25;44-176;30-120;60-240;25-30;(4) uitkoppeling pas mogelijk na een grote investering;111062;476659
+39;43;Interxion;Science Park;121;Amsterdam;1098 XG;4;Middel-klein;2000-5000;2,5-5;8,8-22;6-15;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;125401;485445
+40;44;Interxion;Pudongweg;25;Rozenburg;1437 EM;6;Middel-groot;10K-40K;25-100;44-176;30-120;60-240;25-30;(4) uitkoppeling pas mogelijk na een grote investering;110907;476577
+41;45;Digital Realty;Jan Wijsmullerdreef;4, 10;Hoofddorp;2132 PW;4;Middel-klein;2000-5000;25-100;8,8-22;6-15;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;106537;478288
+42;46;Digital Realty;Science Park;120;Amsterdam;1098 XG;5;Middel-klein;5000-10K;12-25;8,8-22;6-15;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;125281;485551
+43;47;Digital Realty;H.J.E. Wenckebachweg;127;Amsterdam;1096 AM;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;123975;483272
+44;48;Ecoracks;Ambachtsweg;25;Eindhoven;5627 BZ;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;158654;387654
+45;4;BIT;Galileïlaan;19;Ede;6716 BP;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(1) uitkoppeling wamte vindt al plaats;171270;448819
+46;49;Ecostora;Kruiwiel;2C;Hardenberg;7773 NL;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;236882;510247
+47;5;BT;Nieuwe Hemweg;6P;Amsterdam;1013 BG;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;119675;489822
+48;6;Bytesnet;De Bunders;1;Groningen;9747 AX;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;35-50;(1) uitkoppeling wamte vindt al plaats;231413;583314
+49;7;Bytesnet;Vlaardingweg;62;Rotterdam;3044 CK;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;88062;438462
+50;8;Cegeka;Transportlaan;100;Geleen;6163 CX ;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;185980;332351
+51;99;NorthC;Lakenblekerstraat;13;Aalsmeer;1431 GE;4;Middel-klein;2000-5000;5-12;22-44;15-30;60-240;20-25;(1) uitkoppeling wamte vindt al plaats;113091;474818
+52;100;NorthC;Kabelweg;48;Amsterdam;1014 BB;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;118382;489641
+53;101;NorthC;Heertjeslaan;1;Delft;2629 JG;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;85698;444833
+54;102;NorthC;High Tech Campus;53;Eindhoven;5656 AG;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(1) uitkoppeling wamte vindt al plaats;159979;379859
+55;103;NorthC;Liverpoolweg;10;Groningen;9744 TW;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;227615;580666
+56;104;NorthC;Frieslandhaven;6;Nieuwegein;3433 PC;4;Middel-klein;2000-5000;5-12;22-44;15-30;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;135581;447761
+57;105;NorthC;Fokkerweg;300;Oude Meer;1438 AN;5;Middel-klein;5000-10K;12-25;22-44;15-30;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;113782;478124
+58;106;NorthC;Anthony Fokkerweg;40;Rotterdam;3088 GG;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;90346;432286
+59;107;NorthC;Tempelhof;5;Rotterdam;3045 PV;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;90427;440951
+60;108;NTT;Aviolanda;1;Rozenburg;1437 ED;5;Middel-klein;5000-10K;25-100;44-176;30-120;60-240;30-35;(3) uitkoppeling van warmte vraagt enige investering;111182;477515
+61;109;Previder;Barnsteenstraat;15;Hengelo;7554 TC;3;Klein;1000-2000;5-12;8,8-22;6-15;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;249226;473780
+62;110;Previder;Expolaan;50;Hengelo;7556 BE;4;Middel-klein;2000-5000;5-12;22-44;6-15;30-60;20-25;(1) uitkoppeling wamte vindt al plaats;249156;478372
+63;111;QTS;Huibertgatweg;2;Eemshaven;9979 XZ;6;Middel-groot;10K-40K;12-25;8,8-22;30-120;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;252821;606620
+64;112;QTS;Zernikelaan;16;Groningen;9747 AA;4;Middel-klein;2000-5000;5-12;8,8-22;15-30;12-30;20-25;(2) uitkoppeling warmte is voorbereid;231193;584995
+65;113;RAM Infotechnology;Ptolemaeuslaan;69;Utrecht;3528 BR;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;133852;453474
+66;114;RUG Rekenhal;Nettelbosje;1;Groningen;9747 AJ;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;231688;584105
+67;115;Sentia Gyrocenter;Gyroscoopweg;134-140;Amsterdam;1042 AZ;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;117965;490432
+68;116;Serverfarm;Archangelkade;1;Amsterdam;1013 BE;5;Middel-klein;5000-10K;12-25;44-176;30-120;60-240;20-25;(3) uitkoppeling van warmte vraagt enige investering;119880;489865
+69;117;Serverius;Laan van de Ram;39;Apeldoorn;7324 BW;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;196929;473404
+70;118;Serverius;De Linge;26;Dronten;8253 PJ;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;176563;506279
+71;119;Serverius;Ketelskamp;10;Meppel;7942 KG;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;209927;525919
+72;120;Skylink;Bart van Slobbestraat;16B;Eygelshoven;6471 WV;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;203037;323099
+73;121;SmartDC;Kloosterweg;1;Heerlen;6412 CN;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;196191;322639
+74;122;SmartDC;Van Nelleweg;1;Rotterdam;3044 BC;4;Middel-klein;2000-5000;5-12;8,8-22;15-30;30-60;20-25;(2) uitkoppeling warmte is voorbereid;89478;437581
+75;123;Solcon;Het Spaarne;11;Dronten;8253 PE;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;176372;505793
+76;124;Switch;Keienbergweg;22;Amsterdam;1101 GB;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(2) uitkoppeling warmte is voorbereid;124230;480270
+77;125;Switch;Treubweg;9;Diemen;1112 BA;5;Middel-klein;5000-10K;12-25;22-44;15-30;60-240;30-35;(2) uitkoppeling warmte is voorbereid;126786;482707
+78;126;Switch;Polanerbaan;1;Woerden;3447 GN;4;Middel-klein;2000-5000;2,5-5;8,8-22;6-15;12-30;30-35;(2) uitkoppeling warmte is voorbereid;121076;455014
+79;127;Systemec;Marinus Dammeweg;19;Venlo;5928 PW;1;Klein;<200;<0,5;<0,9;<0,6;1,2-6;20-25;(2) uitkoppeling warmte is voorbereid;208724;376864
+80;128;Systemec;Marinus Dammeweg;25;Venlo;5928 PW;1;Klein;<200;<0,5;0,9-4,4;<0,6;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;208745;376845
+81;129;T-Mobile;Gyroscoopweg;148;Amsterdan;1042 AZ;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;117942;490497
+82;130;Verizon;Kollenbergweg;13;Amsterdam;1101 AT;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;6-12;25-30;(4) uitkoppeling pas mogelijk na een grote investering;124200;479771
+83;131;Verizon;Cateringweg;5;Schiphol;1118 AM;4;Middel-klein;2000-5000;0,5-2,5;8,8-22;6-15;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;115080;481757
+84;132;Verizon;Koperstraat;6;Rotterdam;3067 GL;2;Klein;200-1000;<0,5;0,9-4,4;0,6-3;1,2-6;25-30;(4) uitkoppeling pas mogelijk na een grote investering;97515;440470
+85;50;Edgeconnex;Koolhovenlaan;12;Schiphol-Rijk;1119 NE;3;Klein;1000-2000;5-12;22-44;6-15;30-60;30-35;(4) uitkoppeling pas mogelijk na een grote investering;112619;477521
+86;51;Edgeconnex;Cessnalaan;55;Schiphol-Rijk;1119 NK;4;Middel-klein;2000-5000;12-25;44-176;30-120;60-240;30-35;(4) uitkoppeling pas mogelijk na een grote investering;112619;477521
+87;52;Edgeconnex;Cessnalaan;55;Schiphol-Rijk;1119 NK;4;Middel-klein;2000-5000;12-25;44-176;30-120;60-240;30-35;(4) uitkoppeling pas mogelijk na een grote investering;112619;477521
+88;53;Edgeconnex;Cessnalaan;32;Schiphol-Rijk;1119 NL;4;Middel-klein;2000-5000;12-25;44-176;30-120;60-240;30-35;(4) uitkoppeling pas mogelijk na een grote investering;112619;477521
+89;54;Edgeconnex;Koolhovenlaan;6;Schiphol-Rijk;1119 NE;6;Middel-groot;10K-40K;25-100;176-440;120-290;240-580;30-35;(3) uitkoppeling van warmte vraagt enige investering;112695;477551
+90;55;Equans;Minckelersstraat;2;Landgraaf;6372 PP;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;200068;322677
+91;56;Equans;Amerikalaan;35;Maastricht;6199 AE;4;Middel-klein;2000-5000;0,5-2,5;8,8-22;6-15;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;182693;326539
+92;57;e-quest;Schootense Dreef;26;Helmond;5708 HZ;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;25-30;(4) uitkoppeling pas mogelijk na een grote investering;171243;387646
+93;58;Equinix;Duivendrechtsekade;80A;Amsterdam;1096 AH;3;Klein;1000-2000;5-12;4,4-8,8;3-6;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;124049;483346
+94;59;Equinix;Luttenbergweg;4;Amsterdam;1101 EC;4;Middel-klein;2000-5000;5-12;8,8-22;6-15;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;124631;479277
+95;60;Equinix;Gyroscoopweg;2E-F;Amsterdam;1042 AB;4;Middel-klein;2000-5000;5-12;8,8-22;15-30;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;117657;490017
+96;61;Equinix;Kuiperbergweg;13;Amsterdam;1101 AE;4;Middel-klein;2000-5000;5-12;8,8-22;15-30;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;124357;479549
+97;62;Equinix;Luttenbergweg;4;Amsterdam;1101 EC;4;Middel-klein;2000-5000;5-12;8,8-22;15-30;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;124631;479277
+98;63;Equinix;Schepenbergweg;42;Amsterdam;1105 AT;5;Middel-klein;5000-10K;12-25;22-44;15-30;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;124867;478510
+99;64;Equinix;Science Park;610;Amsterdam;1098 XH;5;Middel-klein;5000-10K;12-25;22-44;15-30;60-240;20-25;(1) uitkoppeling wamte vindt al plaats;125922;485276
+100;65;Equinix;Lemelerbergweg;28;Amsterdam;1101 AH;5;Middel-klein;5000-10K;12-25;44-176;30-120;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;124451;479656
+101;66;Equinix;Science Park;610;Amsterdam;1098 XH;6;Middel-groot;10K-40K;25-100;44-176;30-120;60-240;20-25;(1) uitkoppeling wamte vindt al plaats;125922;485276
+102;67;Equinix;Auke Vleerstraat;1;Enschede;7521 PE;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;254883;473119
+103;68;Equinix;Telfordstraat;3;Zwolle;8013 RL;2;Klein;200-1000;0,5-2,5;4,4-8,8;3-6;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;206307;500369
+104;69;Exa Infrastructure;Koolhovenlaan;120;Schiphol-Rijk;1119 NH;4;Middel-klein;2000-5000;0,5-2,5;8,8-22;6-15;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;111930;477009
+105;70;Final Frontier;Cypergrasweg;3C;Almere;1313 AK;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;142545;488649
+106;71;Global Switch;Johan Huizingalaan;759;Amsterdam;1066 VH;6;Middel-groot;10K-40K;25-100;44-176;30-120;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;116953;484157
+107;72;Global Switch;Johan Huizingalaan;759;Amsterdam;1066 VH;6;Middel-groot;10K-40K;25-100;44-176;30-120;60-240;20-25;(2) uitkoppeling warmte is voorbereid;116953;484157
+108;73;Global-e;Europalaan;5;Rijen;5121 DH;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;123769;398835
+109;74;Global-e;Haansbergseweg;12;Rijen;5121 LJ;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;123251;399006
+110;75;Globe Datacenter;Ravelijncenter;23;Den Helder;1785 LX;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;113647;550861
+111;76;Google;Oostpolder;4;Eemshaven;9979 XT;7;Hyperscale;40K-100K;>200;>440;>290;>580;20-25;(4) uitkoppeling pas mogelijk na een grote investering;252819;605225
+112;77;Google;Tussenweg;12;Middenmeer;1775 RK;6;Middel-groot;10K-40K;100-200;176-440;120-290;240-580;20-25;(4) uitkoppeling pas mogelijk na een grote investering;130838;533816
+113;78;Greenhouse;Industriestraat;24;Naaldwijk;5145 PV;3;Klein;1000-2000;0,5-2,5;8,8-22;3-6;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;74219;446525
+114;79;Greenhouse;Industriestraat;53;Naaldwijk;5145 PD;4;Middel-klein;2000-5000;0,5-2,5;8,8-22;6-15;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;74118;446549
+115;80;i-beheer;Monierweg;9;Coevorden;7741 KV;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;246187;519573
+116;81;Interconnect;De Steenbok;1;Den Bosch;5215 MG;2;Klein;200-1000;0,5-2,5;4,4-8,8;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;153057;410882
+117;82;Interconnect;Park Forum;1041;Eindhoven;5657 HJ;5;Middel-klein;5000-10K;5-12;22-44;15-30;60-240;20-25;(2) uitkoppeling warmte is voorbereid;155018;383618
+118;83;InterDC;Gildenbroederslaan;1;Doetinchem;7005 BM;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;217752;441045
+119;84;Intermax;Schouwburgplein;30;Rotterdam;3012 CL;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;92217;437246
+120;85;Iron Mountain;J.W. Lucasweg;35;Haarlem;2031 BE;6;Middel-groot;10K-40K;12-25;44-176;30-120;60-240;20-25;(3) uitkoppeling van warmte vraagt enige investering;105821;489565
+121;86;ITB2;Grote Woudhuis;5;Apeldoorn;7325 WM;3;Klein;1000-2000;2,5-5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;198664;468231
+122;87;ITB2;Herfordstraat;18;Deventer;7418 EX;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;20-25;(4) uitkoppeling pas mogelijk na een grote investering;210177;472590
+123;88;ITPT Networks;Science Park;404;Amsterdam;1098 XH;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;6-12;20-25;(4) uitkoppeling pas mogelijk na een grote investering;125761;485495
+124;89;Keppel;Rondebeltweg;62;Almere;1329 BG;6;Middel-groot;10K-40K;5-12;44-176;30-120;60-240;20-25;(4) uitkoppeling pas mogelijk na een grote investering;146907;486291
+125;90;Keppel;Dillenburgstraat;25;Eindhoven;5652 AM;3;Klein;1000-2000;2,5-5;8,8-22;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;158531;382006
+126;91;KPN;Barbara Strozzilaan;251;Amsterdam;1083 HN;5;Middel-klein;5000-10K;2,5-5;22-44;15-30;30-60;20-25;(4) uitkoppeling pas mogelijk na een grote investering;120873;483308
+127;92;KPN;Anthony Fokkerweg;40;Rotterdam;3088 GG;5;Middel-klein;5000-10K;0,5-2,5;22-44;6-15;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;90346;432285
+128;93;KPN;Patersstraat;25;Arnhem;6828 AG;4;Middel-klein;2000-5000;0,5-2,5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;191066;444234
+129;94;KPN;Fauststraat;1;Apeldoorn;7323 BA;3;Klein;1000-2000;0,5-2,5;4,4-8,8;3-6;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;195274;471758
+130;95;KPN;A. Hofmanweg;1;Haarlem;2031 BH;3;Klein;1000-2000;0,5-2,5;8,8-22;6-15;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;106169;489143
+131;96;Maincubes;Capronilaan;2;Schiphol-Rijk;1119 NR;4;Middel-klein;2000-5000;2,5-5;22-44;15-30;12-30;20-25;(4) uitkoppeling pas mogelijk na een grote investering;113078;477309
+132;97;Microsoft;Agriport;601;Middenmeer;1775 TK;8;Hyperscale;>100K;100-200;>440;>290;>580;25-30;(4) uitkoppeling pas mogelijk na een grote investering;131446;531079
+133;98;Nikhef;Science Park;105;Amsterdam;1098 XG;2;Klein;200-1000;0,5-2,5;0,9-4,4;0,6-3;1,2-6;25-30;(1) uitkoppeling wamte vindt al plaats;125286;485458
