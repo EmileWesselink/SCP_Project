@@ -91,6 +91,56 @@ for key, filepath in tennet_files.items():
 # ============ 4. LOAD WARMTE DATA ============
 print("\n[4/5] Loading Warmte (heat) data...")
 warmte_data = {}
+
+# --- Libraries ---
+from matplotlib import pyplot as plt
+import pandas as pd
+import numpy as np
+import netCDF4
+import geopandas as gpd
+import glob
+import os
+
+# --- Load NetCDF warmte grid ---
+# Adjust path if your .nc file lives somewhere else
+nc_fp = "data/warmte_data/OVERVIEW_potential_recoverable_heat.nc"
+
+try:
+    nc = netCDF4.Dataset(nc_fp)
+
+    # Read variables (names taken from the .nc you showed earlier)
+    data = nc.variables["data"][:]    # 2D array [y, x]
+    x = nc.variables["x"][:]          # 1D array (x coordinates in RD New)
+    y = nc.variables["y"][:]          # 1D array (y coordinates in RD New)
+
+
+    # Build a point cloud (one point per non-NaN grid cell)
+    X_grid, Y_grid = np.meshgrid(x, y)          # shape (ny, nx)
+    flat_df = pd.DataFrame({
+        "X": X_grid.ravel(),
+        "Y": Y_grid.ravel(),
+        "heat": data.ravel()
+    })
+
+    # Drop NaNs
+    flat_df = flat_df.dropna(subset=["heat"])
+
+    # Turn into GeoDataFrame in RD New (EPSG:28992), then to WGS84 (EPSG:4326)
+    gdf_heat = gpd.GeoDataFrame(
+        flat_df,
+        geometry=gpd.points_from_xy(flat_df["X"], flat_df["Y"]),
+        crs="EPSG:28992"
+    ).to_crs(epsg=4326)
+
+    # Store in warmte_data dict so the map code can access it
+    warmte_data["OVERVIEW_potential_recoverable_heat.nc"] = gdf_heat
+
+    print(f"  ✓ Loaded NetCDF warmte grid: {len(gdf_heat)} non-empty cells")
+
+except Exception as e:
+    print(f"  ○ NetCDF warmte grid not loaded - {str(e)[:80]}")
+
+# --- Existing CSV warmte files loading ---
 warmte_files = glob.glob("data/warmte_data/*.csv")
 print(f"  Found {len(warmte_files)} warmte CSV files")
 
@@ -102,6 +152,7 @@ for filepath in warmte_files:
         print(f"  ✓ {filename}: {len(df)} records")
     except Exception as e:
         print(f"  ○ {filename}: Could not load - {str(e)[:50]}")
+
 
 # ============ 5. LOAD NETHERLANDS BOUNDARY ============
 print("\n[5/5] Loading Netherlands boundary...")
@@ -277,26 +328,40 @@ if mt_warmte_file in warmte_data:
 
 warmte_group.add_to(m)
 
-# ============ WMS LAYERS ============
-print("Adding WMS layers...")
+# ============ Geothermie LAYERS ============
+print("Adding Geothermie layers...")
 thermogis_group = folium.FeatureGroup(name='🌍 ThermoGIS Geothermie', show=False)
-try:
-    wms_url = 'https://gis.gdngeoservices.nl/arcgis/services/thermogis_gdn/MapServer/WMSServer'
-    folium.raster_layers.WmsTileLayer(
-        url=wms_url,
-        layers='0',
-        transparent=True,
-        format='image/png',
-        opacity=0.5,
-        name='ThermoGIS',
-        overlay=True,
-        control=True,
-        attr='TNO - GDN ThermoGIS'
-    ).add_to(thermogis_group)
-    print("  ✓ ThermoGIS WMS added")
-except Exception as e:
-    print(f"  ○ ThermoGIS WMS error: {e}")
+
+# --- NEW: NetCDF warmte grid as heatmap layer ---
+nc_key = "OVERVIEW_potential_recoverable_heat.nc"
+if nc_key in warmte_data:
+    gdf_heat = warmte_data[nc_key]
+
+    # Build list [lat, lon, weight] for HeatMap
+    heat_points = []
+    for _, row in gdf_heat.iterrows():
+        val = row["heat"]
+        if pd.isna(val):
+            continue
+        # Optional: ignore negative or very small values
+        if val <= 0:
+            continue
+        heat_points.append([row.geometry.y, row.geometry.x, float(val)])
+
+    if heat_points:
+        HeatMap(
+            heat_points,
+            name="🌡️ Potentieel herwinbare warmte (grid)",
+            radius=10,
+            blur=15,
+            max_zoom=12
+        ).add_to(thermogis_group)
+
+        print(f"  ✓ Added NetCDF warmte grid to map ({len(heat_points)} cells)")
+
 thermogis_group.add_to(m)
+
+######### Rest Warmte
 
 restwarmte_group = folium.FeatureGroup(name='🏭 PDOK Restwarmte', show=False)
 try:
