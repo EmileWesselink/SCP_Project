@@ -3,7 +3,9 @@
     "allow": [
       "WebSearch",
       "Bash(curl:*)",
-      "Bash(dir \"C:\\Users\\tobia\\Documents\\GitHub\\SCP_Project\" /A -B)"
+      "Bash(dir \"C:\\Users\\tobia\\Documents\\GitHub\\SCP_Project\" /A -B)",
+      "Bash(dir \"C:\\Users\\tobia\\Documents\\GitHub\\SCP_Project\\data\" /B)",
+      "Bash(python create_comprehensive_map.py:*)"
     ],
     "deny": [],
     "ask": []
