@@ -20,6 +20,7 @@ import glob
 from sklearn.neighbors import BallTree
 from scipy.spatial.distance import cdist
 import json
+import base64
 
 print("=" * 80)
 print("LOADING ALL DATA SOURCES...")
@@ -28,7 +29,9 @@ print("=" * 80)
 # ============ 1. LOAD RVB BUILDINGS ============
 print("\n[1/5] Loading RVB Buildings...")
 gdf = gpd.read_file("data/Bouwwerken_netcongestie_data/Bouwwerken_netcongestie.shp")
-gdf_wgs84 = gdf.to_crs(epsg=4326)
+TUD_basislijst = pd.read_excel("data/TUD_data/TUD_Basislijst_Bekende_aansluitingen_(sept25).xlsx", sheet_name = "Gefilterde data", header=0)
+merged = gdf.merge(TUD_basislijst, on="EAN", how="inner")
+gdf_wgs84 = merged.to_crs(epsg=4326)
 gdf_projected = gdf.to_crs(epsg=28992)
 gdf_projected["centroid"] = gdf_projected.geometry.centroid
 gdf_wgs84["centroid"] = gdf_projected["centroid"].to_crs(epsg=4326)
@@ -39,6 +42,21 @@ min_area = rvb_points["energy_proxy"].min()
 max_area = rvb_points["energy_proxy"].max()
 rvb_points["radius"] = 4 + (rvb_points["energy_proxy"] - min_area) / (max_area - min_area) * 14
 
+# Map judgement to colors (adjust if you want different shades)
+oordeel_color_map = {
+    "Groen":  "#4CAF50",
+    "Oranje": "#FF9800",
+    "Rood":   "#F44336",
+}
+
+rvb_points["marker_color"] = (
+    rvb_points["Oordeel verbruik"]
+    .map(oordeel_color_map)
+    .fillna("#1a5490")   # fallback if empty/unknown
+)
+
+
+"""
 def get_color(value, min_val, max_val):
     if max_val == min_val:
         return '#FFA500'
@@ -53,6 +71,7 @@ def get_color(value, min_val, max_val):
         return '#F44336'
 
 rvb_points["color"] = rvb_points["energy_proxy"].apply(lambda x: get_color(x, min_area, max_area))
+"""
 print(f"✓ Loaded {len(rvb_points)} RVB buildings")
 
 # ============ 2. LOAD DEFENSIE VKA DATA ============
@@ -285,6 +304,19 @@ triangle_icon = folium.features.CustomIcon(
     icon_size=(20, 20),
     icon_anchor=(10, 10)
 )
+def make_triangle_icon(color_hex: str) -> folium.features.CustomIcon:
+    svg = f"""
+    <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="10,2 2,18 18,18" fill="{color_hex}" stroke="#000" stroke-width="1.5"/>
+    </svg>
+    """.strip()
+
+    b64 = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
+    return folium.features.CustomIcon(
+        icon_image=f"data:image/svg+xml;base64,{b64}",
+        icon_size=(20, 20),
+        icon_anchor=(10, 10)
+    )
 
 for idx, row in rvb_points.iterrows():
     # Calculate distances to all warmte sources
@@ -361,8 +393,10 @@ for idx, row in rvb_points.iterrows():
         location=[row.geometry.y, row.geometry.x],
         popup=folium.Popup(popup_html, max_width=500),
         tooltip=f"🏢 RVB: {row.get('BOUWWERKCO', 'N/A')} | Click for analysis",
-        icon=triangle_icon
+        icon=make_triangle_icon(row["marker_color"])
     ).add_to(rvb_group)
+
+
 
 rvb_group.add_to(m)
 
