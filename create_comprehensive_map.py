@@ -21,6 +21,8 @@ from sklearn.neighbors import BallTree
 from scipy.spatial.distance import cdist
 import json
 import base64
+from matplotlib import colors, pyplot as plt
+
 
 print("=" * 80)
 print("LOADING ALL DATA SOURCES...")
@@ -41,7 +43,27 @@ rvb_points["energy_proxy"] = rvb_points["Shape_Area"]
 min_area = rvb_points["energy_proxy"].min()
 max_area = rvb_points["energy_proxy"].max()
 rvb_points["radius"] = 4 + (rvb_points["energy_proxy"] - min_area) / (max_area - min_area) * 14
+rvb_points['vermogen/capacity']= rvb_points['Max vermogen verbruik'] / rvb_points['Toekomstige contractcapaciteit'] * 100
 
+"""
+# Define a function to calculate gradient color based on vermogen/capacity
+def get_gradient_color(value):
+    value = float(value)  # Ensure value is a float
+    if value > 100:
+        # Bright red for value = 100
+        return "#F44336"  # Pure bright red
+    elif 80 <= value <= 100:
+        # Orange gradient for values between 80 and 100
+        norm = (value - 80) / 20  # Normalize to [0, 1]
+        return colors.to_hex((1, max(0.2, 0.6 - 0.4 * norm), 0))  # Ensure orange stays vibrant
+    else:
+        # Green to orange gradient for values < 80
+        norm = value / 80  # Normalize to [0, 1]
+        return colors.to_hex((max(0.2, 1 - norm), min(1, 0.6 + 0.4 * norm), 0))  # Ensure green stays vibrant
+
+# Apply the gradient color function to the 'vermogen/capacity' column
+rvb_points["marker_color"] = rvb_points["vermogen/capacity"].apply(get_gradient_color).fillna("#1a5490")   # fallback if empty/unknown
+"""
 # Map judgement to colors (adjust if you want different shades)
 oordeel_color_map = {
     "Groen":  "#4CAF50",
@@ -115,7 +137,7 @@ print("\n[4/5] Loading Warmte (heat) data...")
 warmte_data = {}
 
 # --- Libraries ---
-from matplotlib import pyplot as plt
+from matplotlib import colors, pyplot as plt
 import pandas as pd
 import numpy as np
 import netCDF4
@@ -238,23 +260,7 @@ if mt_warmte_file in warmte_data:
                     'color': '#1E90FF'
                 })
 
-# LT Warmte
-lt_warmte_file = 'Download-LT-Warmtebronnen startanalyse  (2024)-CSV.csv'
-if lt_warmte_file in warmte_data:
-    lt_df = warmte_data[lt_warmte_file]
-    if 'X' in lt_df.columns and 'Y' in lt_df.columns:
-        lt_with_coords = lt_df.dropna(subset=['X', 'Y'])
-        if len(lt_with_coords) > 0:
-            gdf_lt = gpd.GeoDataFrame(lt_with_coords, geometry=gpd.points_from_xy(lt_with_coords['X'], lt_with_coords['Y']), crs='EPSG:28992').to_crs(epsg=4326)
-            for idx, row in gdf_lt.iterrows():
-                all_warmte_sources.append({
-                    'lat': row.geometry.y,
-                    'lon': row.geometry.x,
-                    'type': 'LT Warmte',
-                    'name': row.get('BronNaam', 'N/A'),
-                    'gemeente': row.get('Gemeente', 'N/A'),
-                    'color': '#00CED1'
-                })
+
 
 # Datacenter
 datacenter_file = 'Download-LT DataCentraWarmte-CSV.csv'
@@ -368,6 +374,7 @@ for idx, row in rvb_points.iterrows():
                 <tr><td><b>EAN:</b></td><td>{row.get('EAN', 'N/A')}</td></tr>
                 <tr><td><b>Status:</b></td><td>{row.get('AFSTOOTSTA', 'N/A')}</td></tr>
                 <tr><td><b>Area:</b></td><td>{row.get('Shape_Area', 0):.2f} m²</td></tr>
+                <tr><td><b>Bouwwerkfunctie:</b></td><td>{row.get('Bouwwerkfunctie', 'N/A')}</td></tr>
             </table>
         </div>
 
@@ -615,53 +622,6 @@ if mt_warmte_file in warmte_data:
 
 warmte_group.add_to(m)
 
-# ============ LT WARMTE BRONNEN ============
-print("Adding LT Warmte sources layer...")
-lt_warmte_group = folium.FeatureGroup(name='🌡️ LT Warmte Bronnen', show=False)
-
-lt_warmte_file = 'Download-LT-Warmtebronnen startanalyse  (2024)-CSV.csv'
-if lt_warmte_file in warmte_data:
-    lt_df = warmte_data[lt_warmte_file]
-
-    if 'X' in lt_df.columns and 'Y' in lt_df.columns:
-        lt_with_coords = lt_df.dropna(subset=['X', 'Y'])
-
-        if len(lt_with_coords) > 0:
-            gdf_lt_warmte = gpd.GeoDataFrame(
-                lt_with_coords,
-                geometry=gpd.points_from_xy(lt_with_coords['X'], lt_with_coords['Y']),
-                crs='EPSG:28992'
-            )
-            gdf_lt_warmte = gdf_lt_warmte.to_crs(epsg=4326)
-
-            for idx, row in gdf_lt_warmte.iterrows():
-                popup_html = f"""
-                <div style="font-family: Arial; width: 280px;">
-                    <h4 style="color: #00CED1; margin-bottom: 10px; border-bottom: 2px solid #00CED1;">
-                        🌡️ Warmtebron (LT)
-                    </h4>
-                    <table style="width: 100%; font-size: 12px;">
-                        <tr><td><b>Naam:</b></td><td>{row.get('BronNaam', 'N/A')}</td></tr>
-                        <tr><td><b>Type:</b></td><td>{row.get('TypeBron', 'N/A')}</td></tr>
-                        <tr><td><b>Gemeente:</b></td><td>{row.get('Gemeente', 'N/A')}</td></tr>
-                    </table>
-                </div>
-                """
-
-                folium.CircleMarker(
-                    location=[row.geometry.y, row.geometry.x],
-                    radius=6,
-                    popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"LT Warmte: {row.get('BronNaam', 'N/A')}",
-                    color='#008B8B',
-                    fillColor='#00CED1',
-                    fillOpacity=0.7,
-                    weight=2
-                ).add_to(lt_warmte_group)
-
-            print(f"  ✓ Added {len(gdf_lt_warmte)} LT warmte sources")
-
-lt_warmte_group.add_to(m)
 
 # ============ DATACENTER WARMTE ============
 print("Adding Datacenter Warmte layer...")
@@ -967,11 +927,6 @@ legend_html = '''
             <span style="display: inline-block; width: 12px; height: 12px; background: #1E90FF;
                          margin-right: 10px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
             <span style="color: rgba(255,255,255,0.85); font-size: 11px;">MT Warmte Bronnen</span>
-        </div>
-        <div style="margin: 5px 0; display: flex; align-items: center;">
-            <span style="display: inline-block; width: 12px; height: 12px; background: #00CED1;
-                         margin-right: 10px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
-            <span style="color: rgba(255,255,255,0.85); font-size: 11px;">LT Warmte Bronnen</span>
         </div>
         <div style="margin: 5px 0; display: flex; align-items: center;">
             <span style="display: inline-block; width: 12px; height: 12px; background: #9370DB;
