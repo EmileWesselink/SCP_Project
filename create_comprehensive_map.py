@@ -110,19 +110,21 @@ def haversine_km(lon1, lat1, lon2, lat2):
 
 def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, include_geothermie=False):
     """
-    Calculate the normalized warmte besparing score for a location.
+    Calculate the warmte besparing score for a location.
 
     Components (all within 1km):
     - MT Warmte: MWth (thermal power in MW)
     - Datacenter: VERMOGEN where RESTW_TEMP > 60°C
+    - PDOK Restwarmte: tjWarmte (TJ of industrial residual heat)
     - Condens Warmte: TJ_MTWarmte (TJ of MT heat via heat pump)
     - Geothermie: heat value at location (only for Defensie)
 
-    Returns: (raw_score, normalized_score, score_breakdown)
+    Returns: (raw_score, score_breakdown)
     """
     score_breakdown = {
         'mt_warmte_mwth': 0.0,
         'datacenter_vermogen': 0.0,
+        'pdok_restwarmte_tj': 0.0,
         'condens_tj_mt': 0.0,
         'geothermie_heat': 0.0
     }
@@ -137,6 +139,8 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
                 temp = source.get('RESTW_TEMP_numeric', 0) or 0
                 if temp > 60:
                     score_breakdown['datacenter_vermogen'] += source.get('VERMOGEN_numeric', 0) or 0
+            elif source['type'] == 'PDOK Restwarmte':
+                score_breakdown['pdok_restwarmte_tj'] += source.get('tjWarmte', 0) or 0
             elif source['type'] == 'Condens Warmte':
                 score_breakdown['condens_tj_mt'] += source.get('TJ_MTWarmte', 0) or 0
 
@@ -155,16 +159,76 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
             score_breakdown['geothermie_heat'] = nearest_heat
 
     # Calculate raw score (weighted sum)
-    # Convert all to common unit (approximate energy potential)
-    # MWth is in MW, TJ is energy, we'll create a composite score
+    # Convert all to common unit (approximate energy potential in MW-equivalent)
     raw_score = (
         score_breakdown['mt_warmte_mwth'] * 1.0 +  # MW thermal
         score_breakdown['datacenter_vermogen'] * 1.0 +  # MW
+        score_breakdown['pdok_restwarmte_tj'] * 0.1 +  # TJ -> approximate MW equivalent
         score_breakdown['condens_tj_mt'] * 0.1 +  # TJ -> approximate MW equivalent
         score_breakdown['geothermie_heat'] * 0.01  # Scale down geothermie
     )
 
     return raw_score, score_breakdown
+
+def normalize_score(raw_score, max_score=100):
+    """
+    Normalize raw score to 0-100 scale using logarithmic scaling.
+    This makes the score more interpretable across different magnitudes.
+
+    Interpretation:
+    - 0-20: Zeer Laag (nauwelijks warmtebronnen beschikbaar)
+    - 20-40: Laag (beperkte warmtebronnen)
+    - 40-60: Gemiddeld (redelijke warmtepotentie)
+    - 60-80: Hoog (goede warmtepotentie)
+    - 80-100: Zeer Hoog (uitstekende warmtepotentie)
+    """
+    if raw_score <= 0:
+        return 0
+
+    # Use logarithmic scaling: score of 1 MW = ~30, 10 MW = ~60, 100 MW = ~90
+    import math
+    # Log scale with base adjustment for reasonable distribution
+    normalized = min(100, max(0, 30 * math.log10(raw_score + 1) + 10))
+    return normalized
+
+def get_score_interpretation(normalized_score):
+    """
+    Get textual interpretation and color for the normalized score.
+    Returns: (label, color, description)
+    """
+    if normalized_score >= 80:
+        return ("Zeer Hoog", "#1B5E20", "Uitstekende warmtepotentie - veel nabije bronnen beschikbaar")
+    elif normalized_score >= 60:
+        return ("Hoog", "#4CAF50", "Goede warmtepotentie - meerdere bruikbare bronnen")
+    elif normalized_score >= 40:
+        return ("Gemiddeld", "#FF9800", "Redelijke warmtepotentie - enkele bronnen beschikbaar")
+    elif normalized_score >= 20:
+        return ("Laag", "#FF5722", "Beperkte warmtepotentie - weinig nabije bronnen")
+    else:
+        return ("Zeer Laag", "#B71C1C", "Nauwelijks warmtebronnen binnen 1km beschikbaar")
+
+def create_score_gauge_html(normalized_score, label, color):
+    """Create a visual gauge/progress bar for the score."""
+    return f"""
+    <div style="margin: 10px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <span style="font-size: 32px; font-weight: bold; color: {color};">{normalized_score:.0f}</span>
+            <span style="background: {color}; color: white; padding: 4px 12px; border-radius: 12px; font-weight: bold; font-size: 12px;">{label}</span>
+        </div>
+        <div style="background: #e0e0e0; border-radius: 10px; height: 12px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #B71C1C 0%, #FF5722 25%, #FF9800 50%, #4CAF50 75%, #1B5E20 100%); width: {normalized_score}%; height: 100%; border-radius: 10px; transition: width 0.3s;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 9px; color: #666; margin-top: 2px;">
+            <span>0</span>
+            <span>Zeer Laag</span>
+            <span>Laag</span>
+            <span>Gemiddeld</span>
+            <span>Hoog</span>
+            <span>Zeer Hoog</span>
+            <span>100</span>
+        </div>
+    </div>
+    """
 
 # Global variables for score normalization (will be set after collecting all scores)
 all_raw_scores = []
@@ -342,6 +406,20 @@ for filepath in warmte_files:
         print(f"  ✓ {filename}: {len(df)} records")
     except Exception as e:
         print(f"  ○ {filename}: Could not load - {str(e)[:50]}")
+
+# --- Load PDOK Restwarmte via WFS ---
+print("  Loading PDOK Restwarmte from WFS...")
+try:
+    # Note: URL redirects from /rvo/restwarmte/ to /rvo/potentiekaart-restwarmte/
+    pdok_wfs_url = "https://service.pdok.nl/rvo/potentiekaart-restwarmte/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=restwarmte:liggingindustrieco2&outputFormat=application/json"
+    gdf_restwarmte = gpd.read_file(pdok_wfs_url)
+    # Convert from EPSG:28992 (RD New) to WGS84
+    if gdf_restwarmte.crs and gdf_restwarmte.crs != "EPSG:4326":
+        gdf_restwarmte = gdf_restwarmte.to_crs(epsg=4326)
+    warmte_data['PDOK_Restwarmte_WFS'] = gdf_restwarmte
+    print(f"  ✓ PDOK Restwarmte (WFS): {len(gdf_restwarmte)} records")
+except Exception as e:
+    print(f"  ○ PDOK Restwarmte (WFS): Could not load - {str(e)[:80]}")
 
 
 # ============ 5. LOAD NETHERLANDS BOUNDARY ============
@@ -528,6 +606,39 @@ if condens_file in warmte_data:
                     'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
                 })
 
+# PDOK Restwarmte - loaded via WFS with tjWarmte field
+if 'PDOK_Restwarmte_WFS' in warmte_data:
+    gdf_pdok = warmte_data['PDOK_Restwarmte_WFS']
+    print(f"  Processing {len(gdf_pdok)} PDOK Restwarmte records...")
+    for idx, row in gdf_pdok.iterrows():
+        try:
+            # Get coordinates from geometry
+            geom = row.geometry
+            if geom is not None:
+                lon = geom.x if hasattr(geom, 'x') else geom.centroid.x
+                lat = geom.y if hasattr(geom, 'y') else geom.centroid.y
+
+                # Parse tjWarmte value (heat in TJ)
+                tj_warmte_val = row.get('tjWarmte', 0)
+                try:
+                    tj_warmte_val = float(tj_warmte_val) if pd.notna(tj_warmte_val) else 0.0
+                except:
+                    tj_warmte_val = 0.0
+
+                all_warmte_sources.append({
+                    'lat': lat,
+                    'lon': lon,
+                    'type': 'PDOK Restwarmte',
+                    'name': row.get('bedrijf', 'N/A'),
+                    'gemeente': 'N/A',
+                    'color': '#FF6B6B',  # Distinct coral/red color
+                    'tjWarmte': tj_warmte_val,
+                    'power_display': f"{tj_warmte_val:.2f} TJ" if tj_warmte_val > 0 else "N/A"
+                })
+        except Exception as e:
+            continue  # Skip records with geometry issues
+    print(f"  ✓ Added PDOK Restwarmte to warmte sources")
+
 # Store geothermie GeoDataFrame for Defensie score calculation
 geothermie_gdf = warmte_data.get("OVERVIEW_potential_recoverable_heat.nc", None)
 
@@ -576,12 +687,19 @@ for idx, row in rvb_points.iterrows():
     max_vermogen = row.get('Max vermogen verbruik', None)
     contractcapaciteit = row.get('Contractcapaciteit', None)
 
+    # Initialize values for display
+    totaal_verbruik = None
+    besparing_warmte = 0
+    nieuw_totaal_verbruik = None
+    besparing_display = ""
+
     # Determine base oordeel
     if pd.isna(max_vermogen) or pd.isna(contractcapaciteit) or contractcapaciteit == 0:
         oordeel_base = "Onbekend"
         verbruik_ratio = None
         oordeel_color = "#808080"  # Gray
     else:
+        totaal_verbruik = max_vermogen
         verbruik_ratio = (max_vermogen / contractcapaciteit) * 100
         if verbruik_ratio <= 80:
             oordeel_base = "Groen"
@@ -594,28 +712,32 @@ for idx, row in rvb_points.iterrows():
             oordeel_color = "#F44336"
 
     # Adjust oordeel based on warmte score (higher score = better potential for heat savings)
-    # If warmte score is significant, it could potentially reduce the effective demand
+    # Besparing warmte opwek = raw_score (in MW-equivalent)
+    # Nieuw Totaal verbruik = Totaal verbruik - Besparing warmte opwek
     adjusted_oordeel = oordeel_base
     adjusted_color = oordeel_color
-    warmte_potential = ""
+    adjusted_ratio = verbruik_ratio
 
-    if raw_score > 0:
-        # Calculate potential reduction based on warmte availability
-        # Assume 1 MW of nearby warmte could reduce demand by ~10%
-        potential_reduction_pct = min(raw_score * 10, 50)  # Cap at 50%
-        warmte_potential = f"Warmte potentieel: -{potential_reduction_pct:.0f}%"
+    if raw_score > 0 and totaal_verbruik is not None:
+        # Besparing is direct gerelateerd aan beschikbare warmte (raw_score is in MW-eq)
+        # Cap de besparing op maximaal 50% van het totale verbruik
+        besparing_warmte = min(raw_score, totaal_verbruik * 0.5)
+        nieuw_totaal_verbruik = totaal_verbruik - besparing_warmte
 
-        if verbruik_ratio is not None and oordeel_base in ["Oranje", "Rood"]:
-            adjusted_ratio = verbruik_ratio * (1 - potential_reduction_pct/100)
+        # Bereken nieuw oordeel op basis van nieuw verbruik
+        if contractcapaciteit > 0:
+            adjusted_ratio = (nieuw_totaal_verbruik / contractcapaciteit) * 100
             if adjusted_ratio <= 80:
-                adjusted_oordeel = "Groen (met warmte)"
+                adjusted_oordeel = "Groen"
                 adjusted_color = "#4CAF50"
             elif adjusted_ratio <= 100:
-                adjusted_oordeel = "Oranje (met warmte)"
+                adjusted_oordeel = "Oranje"
                 adjusted_color = "#FF9800"
             else:
-                adjusted_oordeel = "Rood (met warmte)"
+                adjusted_oordeel = "Rood"
                 adjusted_color = "#F44336"
+
+        besparing_display = f"-{besparing_warmte:.1f} MW ({(besparing_warmte/totaal_verbruik*100):.0f}%)" if totaal_verbruik > 0 else ""
 
     # Build analytics HTML with power column
     sources_html = ""
@@ -648,21 +770,66 @@ for idx, row in rvb_points.iterrows():
         pct = (count / len(nearby_sources) * 100) if nearby_sources else 0
         chart_html += f'<div style="background: #e0e0e0; margin: 2px 0; border-radius: 3px;"><div style="background: linear-gradient(90deg, #1a5490, #42a5f5); width: {pct}%; padding: 2px 5px; color: white; font-size: 10px; border-radius: 3px;">{stype}: {count}</div></div>'
 
-    # Format score display
-    score_display = f"{raw_score:.2f}" if raw_score > 0 else "0"
+    # Normalize score and get interpretation
+    normalized_score = normalize_score(raw_score)
+    score_label, score_color, score_description = get_score_interpretation(normalized_score)
+    score_gauge_html = create_score_gauge_html(normalized_score, score_label, score_color)
 
     # Build score breakdown HTML
     score_breakdown_html = f"""
-    <div style="font-size: 10px; color: #666; margin-top: 5px;">
-        <b>Score componenten:</b><br>
-        MT Warmte: {score_breakdown['mt_warmte_mwth']:.2f} MW |
-        Datacenter: {score_breakdown['datacenter_vermogen']:.2f} MW |
-        Condens: {score_breakdown['condens_tj_mt']:.2f} TJ
+    <div style="font-size: 10px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
+        <b>Componenten (ruwe waarden):</b><br>
+        <table style="width: 100%; margin-top: 4px;">
+            <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
+            <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
+            <tr><td>🏭 PDOK Restwarmte:</td><td style="text-align: right;"><b>{score_breakdown['pdok_restwarmte_tj']:.1f} TJ</b></td></tr>
+            <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
+        </table>
+        <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
     </div>
     """
 
+    # Build the verbruik comparison HTML
+    verbruik_html = ""
+    if totaal_verbruik is not None:
+        verbruik_html = f"""
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-top: 10px;">
+            <table style="width: 100%; font-size: 12px;">
+                <tr>
+                    <td style="padding: 4px;"><b>Totaal Verbruik (huidig):</b></td>
+                    <td style="text-align: right; color: {oordeel_color};"><b>{totaal_verbruik:.1f} MW</b></td>
+                </tr>
+                <tr style="color: #4CAF50;">
+                    <td style="padding: 4px;"><b>Besparing warmte opwek:</b></td>
+                    <td style="text-align: right;"><b>{besparing_display if besparing_display else '0 MW'}</b></td>
+                </tr>
+                <tr style="border-top: 2px solid #1a5490;">
+                    <td style="padding: 4px;"><b>Nieuw Totaal Verbruik:</b></td>
+                    <td style="text-align: right; color: {adjusted_color};"><b>{nieuw_totaal_verbruik:.1f} MW</b></td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px;">Nieuw Verbruik Ratio:</td>
+                    <td style="text-align: right;"><b>{adjusted_ratio:.1f}%</b> van capaciteit</td>
+                </tr>
+            </table>
+        </div>
+        """ if nieuw_totaal_verbruik is not None else f"""
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-top: 10px;">
+            <table style="width: 100%; font-size: 12px;">
+                <tr>
+                    <td style="padding: 4px;"><b>Totaal Verbruik:</b></td>
+                    <td style="text-align: right;"><b>{totaal_verbruik:.1f} MW</b></td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px; color: #999;">Geen warmtebesparing mogelijk</td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+        """
+
     popup_html = f"""
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 500px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 520px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
         <h3 style="color: white; margin: 0 0 10px 0; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
             🏢 RVB Building
         </h3>
@@ -670,36 +837,40 @@ for idx, row in rvb_points.iterrows():
             <table style="width: 100%; font-size: 12px;">
                 <tr><td><b>Code:</b></td><td>{row.get('BOUWWERKCO', 'N/A')}</td></tr>
                 <tr><td><b>EAN:</b></td><td>{row.get('EAN', 'N/A')}</td></tr>
-                <tr><td><b>Status:</b></td><td>{row.get('AFSTOOTSTA', 'N/A')}</td></tr>
-                <tr><td><b>Area:</b></td><td>{row.get('Shape_Area', 0):.2f} m²</td></tr>
                 <tr><td><b>Bouwwerkfunctie:</b></td><td>{row.get('Bouwwerkfunctie', 'N/A')}</td></tr>
-                <tr><td><b>Max Vermogen:</b></td><td>{max_vermogen if pd.notna(max_vermogen) else 'N/A'}</td></tr>
-                <tr><td><b>Contractcapaciteit:</b></td><td>{contractcapaciteit if pd.notna(contractcapaciteit) else 'N/A'}</td></tr>
-                <tr><td><b>Verbruik Ratio:</b></td><td>{f"{verbruik_ratio:.1f}%" if verbruik_ratio else 'N/A'}</td></tr>
+                <tr><td><b>Contractcapaciteit:</b></td><td>{contractcapaciteit if pd.notna(contractcapaciteit) else 'N/A'} MW</td></tr>
             </table>
         </div>
 
         <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-            <h4 style="margin: 0 0 8px 0; color: #1a5490;">⚡ Oordeel Verbruik</h4>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span style="background: {oordeel_color}; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">{oordeel_base}</span>
-                    {f'<span style="margin-left: 10px;">→</span> <span style="background: {adjusted_color}; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">{adjusted_oordeel}</span>' if adjusted_oordeel != oordeel_base else ''}
+            <h4 style="margin: 0 0 8px 0; color: #1a5490;">⚡ Oordeel Verbruik & Netcongestie Bijdrage</h4>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 10px; color: #666; margin-bottom: 4px;">HUIDIG</div>
+                    <span style="background: {oordeel_color}; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; display: inline-block;">{oordeel_base}</span>
                 </div>
+                {f'''
+                <div style="font-size: 20px; color: #1a5490;">→</div>
+                <div style="text-align: center;">
+                    <div style="font-size: 10px; color: #666; margin-bottom: 4px;">MET WARMTE</div>
+                    <span style="background: {adjusted_color}; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; display: inline-block;">{adjusted_oordeel}</span>
+                </div>
+                ''' if besparing_warmte > 0 and oordeel_base != adjusted_oordeel else ''}
             </div>
-            {f'<p style="margin: 8px 0 0 0; font-size: 11px; color: #666;">{warmte_potential}</p>' if warmte_potential else ''}
+            {verbruik_html}
         </div>
 
         <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-            <h4 style="margin: 0 0 8px 0; color: #1a5490;">🔥 Warmte Besparing Score</h4>
-            <div style="font-size: 28px; font-weight: bold; color: #1a5490;">{score_display}</div>
+            <h4 style="margin: 0 0 4px 0; color: #1a5490;">🔥 Warmte Besparing Potentieel</h4>
+            <p style="margin: 0 0 8px 0; font-size: 11px; color: #666;">{score_description}</p>
+            {score_gauge_html}
             {score_breakdown_html}
         </div>
 
         <div style="background: white; padding: 12px; border-radius: 8px;">
             <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nabije Warmtebronnen (&lt;1km)</h4>
             <div style="margin-bottom: 10px;">{chart_html}</div>
-            <div style="max-height: 200px; overflow-y: auto;">
+            <div style="max-height: 150px; overflow-y: auto;">
                 <table style="width: 100%; font-size: 11px;">
                     <thead style="background: #f5f5f5; position: sticky; top: 0;">
                         <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Naam</th><th style="padding: 4px; text-align: left;">Vermogen</th><th style="padding: 4px; text-align: left;">Afstand</th></tr>
@@ -708,17 +879,20 @@ for idx, row in rvb_points.iterrows():
                 </table>
             </div>
             <p style="margin: 10px 0 0 0; font-size: 10px; color: #666; text-align: center;">
-                <b>Totaal: {len(nearby_sources)} bronnen</b>
+                <b>Totaal: {len(nearby_sources)} bronnen binnen 1km</b>
             </p>
         </div>
     </div>
     """
 
+    # Marker color reflects the adjusted oordeel (with warmte savings)
+    marker_color = adjusted_color if besparing_warmte > 0 else oordeel_color
+
     folium.Marker(
         location=[row.geometry.y, row.geometry.x],
-        popup=folium.Popup(popup_html, max_width=550),
-        tooltip=f"🏢 RVB: {row.get('BOUWWERKCO', 'N/A')} | Score: {score_display} | Click for analysis",
-        icon=make_triangle_icon(adjusted_color if raw_score > 0 and oordeel_base != adjusted_oordeel else oordeel_color)
+        popup=folium.Popup(popup_html, max_width=570),
+        tooltip=f"🏢 RVB: {row.get('BOUWWERKCO', 'N/A')} | {oordeel_base}{'→'+adjusted_oordeel if besparing_warmte > 0 and oordeel_base != adjusted_oordeel else ''} | Score: {normalized_score:.0f}/100",
+        icon=make_triangle_icon(marker_color)
     ).add_to(rvb_group)
 
 
@@ -767,17 +941,23 @@ for geojson_file in bovenregionaal_files:
                 pct = (count / len(nearby_sources) * 100) if nearby_sources else 0
                 chart_html += f'<div style="background: #e0e0e0; margin: 2px 0; border-radius: 3px;"><div style="background: linear-gradient(90deg, #1a5490, #42a5f5); width: {pct}%; padding: 2px 5px; color: white; font-size: 10px; border-radius: 3px;">{stype}: {count}</div></div>'
 
-            # Format score display
-            score_display = f"{raw_score:.2f}" if raw_score > 0 else "0"
+            # Normalize score and get interpretation
+            normalized_score = normalize_score(raw_score)
+            score_label, score_color, score_description = get_score_interpretation(normalized_score)
+            score_gauge_html = create_score_gauge_html(normalized_score, score_label, score_color)
 
             # Build score breakdown HTML with geothermie
             score_breakdown_html = f"""
-            <div style="font-size: 10px; color: #666; margin-top: 5px;">
-                <b>Score componenten:</b><br>
-                MT Warmte: {score_breakdown['mt_warmte_mwth']:.2f} MW |
-                Datacenter: {score_breakdown['datacenter_vermogen']:.2f} MW |
-                Condens: {score_breakdown['condens_tj_mt']:.2f} TJ<br>
-                <b style="color: #FF8C00;">Geothermie: {score_breakdown['geothermie_heat']:.2f}</b>
+            <div style="font-size: 10px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
+                <b>Componenten (ruwe waarden):</b><br>
+                <table style="width: 100%; margin-top: 4px;">
+                    <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
+                    <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
+                    <tr><td>🏭 PDOK Restwarmte:</td><td style="text-align: right;"><b>{score_breakdown['pdok_restwarmte_tj']:.1f} TJ</b></td></tr>
+                    <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
+                    <tr style="color: #FF8C00;"><td>🌋 Geothermie:</td><td style="text-align: right;"><b>{score_breakdown['geothermie_heat']:.2f}</b></td></tr>
+                </table>
+                <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
             </div>
             """
 
@@ -794,15 +974,16 @@ for geojson_file in bovenregionaal_files:
                 </div>
 
                 <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">🔥 Warmte Besparing Score (incl. Geothermie)</h4>
-                    <div style="font-size: 28px; font-weight: bold; color: #1a5490;">{score_display}</div>
+                    <h4 style="margin: 0 0 4px 0; color: #1a5490;">🔥 Warmte Besparing Potentieel (incl. Geothermie)</h4>
+                    <p style="margin: 0 0 8px 0; font-size: 11px; color: #666;">{score_description}</p>
+                    {score_gauge_html}
                     {score_breakdown_html}
                 </div>
 
                 <div style="background: white; padding: 12px; border-radius: 8px;">
                     <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nabije Warmtebronnen (&lt;1km)</h4>
                     <div style="margin-bottom: 10px;">{chart_html}</div>
-                    <div style="max-height: 200px; overflow-y: auto;">
+                    <div style="max-height: 180px; overflow-y: auto;">
                         <table style="width: 100%; font-size: 11px;">
                             <thead style="background: #f5f5f5; position: sticky; top: 0;">
                                 <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Naam</th><th style="padding: 4px; text-align: left;">Vermogen</th><th style="padding: 4px; text-align: left;">Afstand</th></tr>
@@ -811,7 +992,7 @@ for geojson_file in bovenregionaal_files:
                         </table>
                     </div>
                     <p style="margin: 10px 0 0 0; font-size: 10px; color: #666; text-align: center;">
-                        <b>Totaal: {len(nearby_sources)} bronnen</b>
+                        <b>Totaal: {len(nearby_sources)} bronnen binnen 1km</b>
                     </p>
                 </div>
             </div>
@@ -820,7 +1001,7 @@ for geojson_file in bovenregionaal_files:
             folium.Marker(
                 location=[row["centroid_wgs84"].y, row["centroid_wgs84"].x],
                 popup=folium.Popup(popup_html, max_width=550),
-                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Score: {score_display} | Click for analysis",
+                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Warmte Score: {normalized_score:.0f}/100 ({score_label})",
                 icon=triangle_icon
             ).add_to(defensie_boven_group)
     except Exception as e:
@@ -870,17 +1051,23 @@ for geojson_file in locatiespecifiek_files:
                 pct = (count / len(nearby_sources) * 100) if nearby_sources else 0
                 chart_html += f'<div style="background: #e0e0e0; margin: 2px 0; border-radius: 3px;"><div style="background: linear-gradient(90deg, #1a5490, #42a5f5); width: {pct}%; padding: 2px 5px; color: white; font-size: 10px; border-radius: 3px;">{stype}: {count}</div></div>'
 
-            # Format score display
-            score_display = f"{raw_score:.2f}" if raw_score > 0 else "0"
+            # Normalize score and get interpretation
+            normalized_score = normalize_score(raw_score)
+            score_label, score_color, score_description = get_score_interpretation(normalized_score)
+            score_gauge_html = create_score_gauge_html(normalized_score, score_label, score_color)
 
             # Build score breakdown HTML with geothermie
             score_breakdown_html = f"""
-            <div style="font-size: 10px; color: #666; margin-top: 5px;">
-                <b>Score componenten:</b><br>
-                MT Warmte: {score_breakdown['mt_warmte_mwth']:.2f} MW |
-                Datacenter: {score_breakdown['datacenter_vermogen']:.2f} MW |
-                Condens: {score_breakdown['condens_tj_mt']:.2f} TJ<br>
-                <b style="color: #FF8C00;">Geothermie: {score_breakdown['geothermie_heat']:.2f}</b>
+            <div style="font-size: 10px; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
+                <b>Componenten (ruwe waarden):</b><br>
+                <table style="width: 100%; margin-top: 4px;">
+                    <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
+                    <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
+                    <tr><td>🏭 PDOK Restwarmte:</td><td style="text-align: right;"><b>{score_breakdown['pdok_restwarmte_tj']:.1f} TJ</b></td></tr>
+                    <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
+                    <tr style="color: #FF8C00;"><td>🌋 Geothermie:</td><td style="text-align: right;"><b>{score_breakdown['geothermie_heat']:.2f}</b></td></tr>
+                </table>
+                <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
             </div>
             """
 
@@ -897,15 +1084,16 @@ for geojson_file in locatiespecifiek_files:
                 </div>
 
                 <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">🔥 Warmte Besparing Score (incl. Geothermie)</h4>
-                    <div style="font-size: 28px; font-weight: bold; color: #1a5490;">{score_display}</div>
+                    <h4 style="margin: 0 0 4px 0; color: #1a5490;">🔥 Warmte Besparing Potentieel (incl. Geothermie)</h4>
+                    <p style="margin: 0 0 8px 0; font-size: 11px; color: #666;">{score_description}</p>
+                    {score_gauge_html}
                     {score_breakdown_html}
                 </div>
 
                 <div style="background: white; padding: 12px; border-radius: 8px;">
                     <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nabije Warmtebronnen (&lt;1km)</h4>
                     <div style="margin-bottom: 10px;">{chart_html}</div>
-                    <div style="max-height: 200px; overflow-y: auto;">
+                    <div style="max-height: 180px; overflow-y: auto;">
                         <table style="width: 100%; font-size: 11px;">
                             <thead style="background: #f5f5f5; position: sticky; top: 0;">
                                 <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Naam</th><th style="padding: 4px; text-align: left;">Vermogen</th><th style="padding: 4px; text-align: left;">Afstand</th></tr>
@@ -914,7 +1102,7 @@ for geojson_file in locatiespecifiek_files:
                         </table>
                     </div>
                     <p style="margin: 10px 0 0 0; font-size: 10px; color: #666; text-align: center;">
-                        <b>Totaal: {len(nearby_sources)} bronnen</b>
+                        <b>Totaal: {len(nearby_sources)} bronnen binnen 1km</b>
                     </p>
                 </div>
             </div>
@@ -923,7 +1111,7 @@ for geojson_file in locatiespecifiek_files:
             folium.Marker(
                 location=[row["centroid_wgs84"].y, row["centroid_wgs84"].x],
                 popup=folium.Popup(popup_html, max_width=550),
-                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Score: {score_display} | Click for analysis",
+                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Warmte Score: {normalized_score:.0f}/100 ({score_label})",
                 icon=triangle_icon
             ).add_to(defensie_loc_group)
     except Exception as e:
@@ -1183,6 +1371,56 @@ if condens_file in warmte_data:
             print(f"  ✓ Added {len(gdf_cw)} condens warmte sources")
 
 condens_warmte_group.add_to(m)
+
+# ============ PDOK RESTWARMTE (Industrial Residual Heat) ============
+print("Adding PDOK Restwarmte layer...")
+pdok_restwarmte_group = folium.FeatureGroup(name='🏭 PDOK Restwarmte (Industrie)', show=False)
+
+if 'PDOK_Restwarmte_WFS' in warmte_data:
+    gdf_pdok = warmte_data['PDOK_Restwarmte_WFS']
+
+    for idx, row in gdf_pdok.iterrows():
+        try:
+            geom = row.geometry
+            if geom is not None:
+                lon = geom.x if hasattr(geom, 'x') else geom.centroid.x
+                lat = geom.y if hasattr(geom, 'y') else geom.centroid.y
+
+                # Parse tjWarmte value
+                tj_warmte = row.get('tjWarmte', 0)
+                try:
+                    tj_display = f"{float(tj_warmte):.2f} TJ" if pd.notna(tj_warmte) else "N/A"
+                except:
+                    tj_display = str(tj_warmte)
+
+                popup_html = f"""
+                <div style="font-family: Arial; width: 280px;">
+                    <h4 style="color: #FF6B6B; margin-bottom: 10px; border-bottom: 2px solid #FF6B6B;">
+                        🏭 PDOK Restwarmte (Industrie)
+                    </h4>
+                    <table style="width: 100%; font-size: 12px;">
+                        <tr><td><b>Bedrijf:</b></td><td>{row.get('bedrijf', 'N/A')}</td></tr>
+                        <tr><td><b>Warmte:</b></td><td>{tj_display}</td></tr>
+                    </table>
+                </div>
+                """
+
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=7,
+                    popup=folium.Popup(popup_html, max_width=300),
+                    tooltip=f"Restwarmte: {row.get('bedrijf', 'N/A')} ({tj_display})",
+                    color='#CD5C5C',
+                    fillColor='#FF6B6B',
+                    fillOpacity=0.7,
+                    weight=2
+                ).add_to(pdok_restwarmte_group)
+        except Exception as e:
+            continue
+
+    print(f"  ✓ Added {len(gdf_pdok)} PDOK restwarmte sources")
+
+pdok_restwarmte_group.add_to(m)
 
 # ============ Geothermie LAYERS ============
 print("Adding Geothermie layers...")
