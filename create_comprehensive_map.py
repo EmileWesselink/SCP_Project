@@ -22,6 +22,152 @@ from scipy.spatial.distance import cdist
 import json
 import base64
 from matplotlib import colors, pyplot as plt
+import requests
+import time
+
+# ============ GEOCODING FUNCTION FOR DUTCH PLACES ============
+def geocode_plaats(plaats_name, cache={}):
+    """
+    Geocode a Dutch place name to RD New coordinates using PDOK Locatieserver.
+    Uses caching to avoid repeated API calls.
+    Returns (x, y) in EPSG:28992 or (None, None) if not found.
+    """
+    if plaats_name in cache:
+        return cache[plaats_name]
+
+    try:
+        # Clean up the place name
+        clean_name = plaats_name.strip().upper()
+
+        # PDOK Locatieserver API
+        url = f"https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?q={clean_name}&fq=type:woonplaats&rows=1"
+        response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('response', {}).get('docs'):
+                doc = data['response']['docs'][0]
+                # Get centroid coordinates (in RD New)
+                if 'centroide_rd' in doc:
+                    # Format: "POINT(x y)"
+                    centroid = doc['centroide_rd']
+                    coords = centroid.replace('POINT(', '').replace(')', '').split()
+                    x, y = float(coords[0]), float(coords[1])
+                    cache[plaats_name] = (x, y)
+                    return (x, y)
+
+        cache[plaats_name] = (None, None)
+        return (None, None)
+    except Exception as e:
+        cache[plaats_name] = (None, None)
+        return (None, None)
+
+# Pre-populate geocode cache with common Dutch cities to reduce API calls
+geocode_cache = {}
+
+# ============ HELPER FUNCTIONS FOR SCORE CALCULATION ============
+def parse_vermogen_range(vermogen_str):
+    """Parse VERMOGEN range string to get average numeric value in MW."""
+    if pd.isna(vermogen_str) or vermogen_str == 'onbekend':
+        return 0.0
+    try:
+        vermogen_str = str(vermogen_str).replace(',', '.')
+        if vermogen_str.startswith('<'):
+            return float(vermogen_str[1:]) / 2  # Take half of upper bound
+        elif vermogen_str.startswith('>'):
+            return float(vermogen_str[1:])  # Take lower bound
+        elif '-' in vermogen_str:
+            parts = vermogen_str.split('-')
+            return (float(parts[0]) + float(parts[1])) / 2  # Average
+        else:
+            return float(vermogen_str)
+    except:
+        return 0.0
+
+def parse_temp_range(temp_str):
+    """Parse RESTW_TEMP range string to get average numeric value."""
+    if pd.isna(temp_str) or temp_str == 'onbekend':
+        return 0.0
+    try:
+        temp_str = str(temp_str)
+        if '-' in temp_str:
+            parts = temp_str.split('-')
+            return (float(parts[0]) + float(parts[1])) / 2
+        else:
+            return float(temp_str)
+    except:
+        return 0.0
+
+def haversine_km(lon1, lat1, lon2, lat2):
+    """Calculate haversine distance in km between two points."""
+    from math import radians, cos, sin, asin, sqrt
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    return 6371 * c
+
+def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, include_geothermie=False):
+    """
+    Calculate the normalized warmte besparing score for a location.
+
+    Components (all within 1km):
+    - MT Warmte: MWth (thermal power in MW)
+    - Datacenter: VERMOGEN where RESTW_TEMP > 60°C
+    - Condens Warmte: TJ_MTWarmte (TJ of MT heat via heat pump)
+    - Geothermie: heat value at location (only for Defensie)
+
+    Returns: (raw_score, normalized_score, score_breakdown)
+    """
+    score_breakdown = {
+        'mt_warmte_mwth': 0.0,
+        'datacenter_vermogen': 0.0,
+        'condens_tj_mt': 0.0,
+        'geothermie_heat': 0.0
+    }
+
+    for source in warmte_sources:
+        dist = haversine_km(lon, lat, source['lon'], source['lat'])
+        if dist <= 1.0:  # Within 1km
+            if source['type'] == 'MT Warmte':
+                score_breakdown['mt_warmte_mwth'] += source.get('MWth', 0) or 0
+            elif source['type'] == 'Datacenter':
+                # Only count if temperature > 60°C
+                temp = source.get('RESTW_TEMP_numeric', 0) or 0
+                if temp > 60:
+                    score_breakdown['datacenter_vermogen'] += source.get('VERMOGEN_numeric', 0) or 0
+            elif source['type'] == 'Condens Warmte':
+                score_breakdown['condens_tj_mt'] += source.get('TJ_MTWarmte', 0) or 0
+
+    # Add geothermie for Defensie locations
+    if include_geothermie and geothermie_gdf is not None and len(geothermie_gdf) > 0:
+        # Find nearest geothermie point
+        min_dist = float('inf')
+        nearest_heat = 0
+        for _, geo_row in geothermie_gdf.iterrows():
+            dist = haversine_km(lon, lat, geo_row.geometry.x, geo_row.geometry.y)
+            if dist < min_dist:
+                min_dist = dist
+                nearest_heat = geo_row.get('heat', 0) or 0
+        # Only include if within reasonable distance (5km for geothermie)
+        if min_dist <= 5.0:
+            score_breakdown['geothermie_heat'] = nearest_heat
+
+    # Calculate raw score (weighted sum)
+    # Convert all to common unit (approximate energy potential)
+    # MWth is in MW, TJ is energy, we'll create a composite score
+    raw_score = (
+        score_breakdown['mt_warmte_mwth'] * 1.0 +  # MW thermal
+        score_breakdown['datacenter_vermogen'] * 1.0 +  # MW
+        score_breakdown['condens_tj_mt'] * 0.1 +  # TJ -> approximate MW equivalent
+        score_breakdown['geothermie_heat'] * 0.01  # Scale down geothermie
+    )
+
+    return raw_score, score_breakdown
+
+# Global variables for score normalization (will be set after collecting all scores)
+all_raw_scores = []
 
 
 print("=" * 80)
@@ -242,7 +388,7 @@ boundary_group.add_to(m)
 print("Collecting all warmte sources for analytics...")
 all_warmte_sources = []
 
-# MT Warmte
+# MT Warmte - include MWth (thermal power) for score calculation
 mt_warmte_file = 'Download-MT-Warmtebronnen startanalyse  (2024)-CSV.csv'
 if mt_warmte_file in warmte_data:
     mt_df = warmte_data[mt_warmte_file]
@@ -251,18 +397,27 @@ if mt_warmte_file in warmte_data:
         if len(mt_with_coords) > 0:
             gdf_mt = gpd.GeoDataFrame(mt_with_coords, geometry=gpd.points_from_xy(mt_with_coords['X'], mt_with_coords['Y']), crs='EPSG:28992').to_crs(epsg=4326)
             for idx, row in gdf_mt.iterrows():
+                # Parse MWth value (thermal power in MW)
+                mwth_val = row.get('MWth', 0)
+                try:
+                    mwth_val = float(mwth_val) if pd.notna(mwth_val) else 0.0
+                except:
+                    mwth_val = 0.0
+
                 all_warmte_sources.append({
                     'lat': row.geometry.y,
                     'lon': row.geometry.x,
                     'type': 'MT Warmte',
                     'name': row.get('BronNaam', 'N/A'),
                     'gemeente': row.get('Gemeente', 'N/A'),
-                    'color': '#1E90FF'
+                    'color': '#1E90FF',
+                    'MWth': mwth_val,
+                    'power_display': f"{mwth_val:.1f} MW" if mwth_val > 0 else "N/A"
                 })
 
 
 
-# Datacenter
+# Datacenter - include VERMOGEN and RESTW_TEMP for score calculation
 datacenter_file = 'Download-LT DataCentraWarmte-CSV.csv'
 if datacenter_file in warmte_data:
     dc_df = warmte_data[datacenter_file]
@@ -271,32 +426,110 @@ if datacenter_file in warmte_data:
         if len(dc_with_coords) > 0:
             gdf_dc = gpd.GeoDataFrame(dc_with_coords, geometry=gpd.points_from_xy(dc_with_coords['X'], dc_with_coords['Y']), crs='EPSG:28992').to_crs(epsg=4326)
             for idx, row in gdf_dc.iterrows():
+                # Parse VERMOGEN and RESTW_TEMP
+                vermogen_numeric = parse_vermogen_range(row.get('VERMOGEN', '0'))
+                temp_numeric = parse_temp_range(row.get('RESTW_TEMP', '0'))
+
                 all_warmte_sources.append({
                     'lat': row.geometry.y,
                     'lon': row.geometry.x,
                     'type': 'Datacenter',
-                    'name': row.get('BronNaam', 'N/A'),
-                    'gemeente': row.get('Gemeente', 'N/A'),
-                    'color': '#9370DB'
+                    'name': row.get('BEDRIJF', 'N/A'),
+                    'gemeente': row.get('WOONPLAATS', 'N/A'),
+                    'color': '#9370DB',
+                    'VERMOGEN_numeric': vermogen_numeric,
+                    'RESTW_TEMP_numeric': temp_numeric,
+                    'VERMOGEN_raw': row.get('VERMOGEN', 'N/A'),
+                    'RESTW_TEMP_raw': row.get('RESTW_TEMP', 'N/A'),
+                    'power_display': f"{vermogen_numeric:.1f} MW ({row.get('RESTW_TEMP', 'N/A')}°C)"
                 })
 
-# Condens Warmte
+# Condens Warmte - uses geocoding since file has no X,Y columns
 condens_file = 'Download-LT CondensWarmte uit Koelprocessen-CSV.csv'
 if condens_file in warmte_data:
     cw_df = warmte_data[condens_file]
-    if 'X' in cw_df.columns and 'Y' in cw_df.columns:
+    # This file has 'Plaats' instead of X,Y - need to geocode
+    if 'Plaats' in cw_df.columns:
+        print("  Geocoding Condens Warmte locations (this may take a moment)...")
+        cw_with_plaats = cw_df.dropna(subset=['Plaats'])
+        geocoded_count = 0
+        geocoded_data = []
+
+        # Group by Plaats to reduce API calls
+        unique_places = cw_with_plaats['Plaats'].unique()
+        plaats_coords = {}
+        for plaats in unique_places:
+            x, y = geocode_plaats(plaats, geocode_cache)
+            if x is not None and y is not None:
+                plaats_coords[plaats] = (x, y)
+
+        # Now process all rows with geocoded coordinates - include TJ_MTWarmte for score
+        for idx, row in cw_with_plaats.iterrows():
+            plaats = row['Plaats']
+            if plaats in plaats_coords:
+                x, y = plaats_coords[plaats]
+                # Parse TJ_MTWarmte value
+                tj_mt_val = row.get('TJ_MTWarmte', 0)
+                try:
+                    tj_mt_val = float(tj_mt_val) if pd.notna(tj_mt_val) else 0.0
+                except:
+                    tj_mt_val = 0.0
+
+                geocoded_data.append({
+                    'X': x,
+                    'Y': y,
+                    'Naam': row.get('Naam', 'N/A'),
+                    'Plaats': plaats,
+                    'TJ_CondWarmte': row.get('TJ_CondWarmte', 'N/A'),
+                    'TJ_MTWarmte': tj_mt_val,
+                    'SBINaam': row.get('SBINaam', 'N/A')
+                })
+                geocoded_count += 1
+
+        if geocoded_data:
+            geocoded_df = pd.DataFrame(geocoded_data)
+            gdf_cw = gpd.GeoDataFrame(
+                geocoded_df,
+                geometry=gpd.points_from_xy(geocoded_df['X'], geocoded_df['Y']),
+                crs='EPSG:28992'
+            ).to_crs(epsg=4326)
+            for idx, row in gdf_cw.iterrows():
+                tj_mt_val = row.get('TJ_MTWarmte', 0) or 0
+                all_warmte_sources.append({
+                    'lat': row.geometry.y,
+                    'lon': row.geometry.x,
+                    'type': 'Condens Warmte',
+                    'name': row.get('Naam', 'N/A'),
+                    'gemeente': row.get('Plaats', 'N/A'),
+                    'color': '#32CD32',
+                    'TJ_MTWarmte': tj_mt_val,
+                    'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
+                })
+            print(f"  ✓ Geocoded {geocoded_count} Condens Warmte locations from {len(unique_places)} unique places")
+    elif 'X' in cw_df.columns and 'Y' in cw_df.columns:
+        # Fallback to X,Y if available
         cw_with_coords = cw_df.dropna(subset=['X', 'Y'])
         if len(cw_with_coords) > 0:
             gdf_cw = gpd.GeoDataFrame(cw_with_coords, geometry=gpd.points_from_xy(cw_with_coords['X'], cw_with_coords['Y']), crs='EPSG:28992').to_crs(epsg=4326)
             for idx, row in gdf_cw.iterrows():
+                tj_mt_val = row.get('TJ_MTWarmte', 0)
+                try:
+                    tj_mt_val = float(tj_mt_val) if pd.notna(tj_mt_val) else 0.0
+                except:
+                    tj_mt_val = 0.0
                 all_warmte_sources.append({
                     'lat': row.geometry.y,
                     'lon': row.geometry.x,
                     'type': 'Condens Warmte',
                     'name': row.get('BronNaam', 'N/A'),
                     'gemeente': row.get('Gemeente', 'N/A'),
-                    'color': '#32CD32'
+                    'color': '#32CD32',
+                    'TJ_MTWarmte': tj_mt_val,
+                    'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
                 })
+
+# Store geothermie GeoDataFrame for Defensie score calculation
+geothermie_gdf = warmte_data.get("OVERVIEW_potential_recoverable_heat.nc", None)
 
 print(f"  ✓ Collected {len(all_warmte_sources)} warmte sources for analytics")
 
@@ -325,36 +558,88 @@ def make_triangle_icon(color_hex: str) -> folium.features.CustomIcon:
     )
 
 for idx, row in rvb_points.iterrows():
-    # Calculate distances to all warmte sources
+    # Calculate distances to all warmte sources - only within 1km
     lat, lon = row.geometry.y, row.geometry.x
     nearby_sources = []
 
     for source in all_warmte_sources:
-        # Calculate haversine distance in km
-        from math import radians, cos, sin, asin, sqrt
-        lon1, lat1, lon2, lat2 = map(radians, [lon, lat, source['lon'], source['lat']])
-        dlon = lon2 - lon1
-        dlat = lat2 - lat1
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-        c = 2 * asin(sqrt(a))
-        km = 6371 * c
-
-        if km <= 10:  # Within 10km
+        km = haversine_km(lon, lat, source['lon'], source['lat'])
+        if km <= 1.0:  # Within 1km only
             nearby_sources.append({**source, 'distance': km})
 
     nearby_sources.sort(key=lambda x: x['distance'])
-    nearby_sources = nearby_sources[:10]  # Top 10 nearest
 
-    # Build analytics HTML
+    # Calculate warmte score for this location
+    raw_score, score_breakdown = calculate_warmte_score(lat, lon, all_warmte_sources, geothermie_gdf, include_geothermie=False)
+
+    # Calculate oordeel verbruik with warmte score adjustment
+    max_vermogen = row.get('Max vermogen verbruik', None)
+    contractcapaciteit = row.get('Contractcapaciteit', None)
+
+    # Determine base oordeel
+    if pd.isna(max_vermogen) or pd.isna(contractcapaciteit) or contractcapaciteit == 0:
+        oordeel_base = "Onbekend"
+        verbruik_ratio = None
+        oordeel_color = "#808080"  # Gray
+    else:
+        verbruik_ratio = (max_vermogen / contractcapaciteit) * 100
+        if verbruik_ratio <= 80:
+            oordeel_base = "Groen"
+            oordeel_color = "#4CAF50"
+        elif verbruik_ratio <= 100:
+            oordeel_base = "Oranje"
+            oordeel_color = "#FF9800"
+        else:
+            oordeel_base = "Rood"
+            oordeel_color = "#F44336"
+
+    # Adjust oordeel based on warmte score (higher score = better potential for heat savings)
+    # If warmte score is significant, it could potentially reduce the effective demand
+    adjusted_oordeel = oordeel_base
+    adjusted_color = oordeel_color
+    warmte_potential = ""
+
+    if raw_score > 0:
+        # Calculate potential reduction based on warmte availability
+        # Assume 1 MW of nearby warmte could reduce demand by ~10%
+        potential_reduction_pct = min(raw_score * 10, 50)  # Cap at 50%
+        warmte_potential = f"Warmte potentieel: -{potential_reduction_pct:.0f}%"
+
+        if verbruik_ratio is not None and oordeel_base in ["Oranje", "Rood"]:
+            adjusted_ratio = verbruik_ratio * (1 - potential_reduction_pct/100)
+            if adjusted_ratio <= 80:
+                adjusted_oordeel = "Groen (met warmte)"
+                adjusted_color = "#4CAF50"
+            elif adjusted_ratio <= 100:
+                adjusted_oordeel = "Oranje (met warmte)"
+                adjusted_color = "#FF9800"
+            else:
+                adjusted_oordeel = "Rood (met warmte)"
+                adjusted_color = "#F44336"
+
+    # Build analytics HTML with power column
     sources_html = ""
     type_counts = {}
+    total_power = {'MT Warmte': 0, 'Datacenter': 0, 'Condens Warmte': 0}
+
     for s in nearby_sources:
         type_counts[s['type']] = type_counts.get(s['type'], 0) + 1
+        power_display = s.get('power_display', 'N/A')
+
+        # Accumulate power by type
+        if s['type'] == 'MT Warmte':
+            total_power['MT Warmte'] += s.get('MWth', 0) or 0
+        elif s['type'] == 'Datacenter':
+            total_power['Datacenter'] += s.get('VERMOGEN_numeric', 0) or 0
+        elif s['type'] == 'Condens Warmte':
+            total_power['Condens Warmte'] += s.get('TJ_MTWarmte', 0) or 0
+
         sources_html += f"""
         <tr style="border-bottom: 1px solid #eee;">
             <td style="padding: 4px;"><span style="color: {s['color']};">●</span> {s['type']}</td>
-            <td style="padding: 4px;">{s['name'][:20]}</td>
-            <td style="padding: 4px;">{s['distance']:.2f} km</td>
+            <td style="padding: 4px;">{s['name'][:18]}</td>
+            <td style="padding: 4px;">{power_display}</td>
+            <td style="padding: 4px;">{s['distance']*1000:.0f}m</td>
         </tr>
         """
 
@@ -363,8 +648,21 @@ for idx, row in rvb_points.iterrows():
         pct = (count / len(nearby_sources) * 100) if nearby_sources else 0
         chart_html += f'<div style="background: #e0e0e0; margin: 2px 0; border-radius: 3px;"><div style="background: linear-gradient(90deg, #1a5490, #42a5f5); width: {pct}%; padding: 2px 5px; color: white; font-size: 10px; border-radius: 3px;">{stype}: {count}</div></div>'
 
+    # Format score display
+    score_display = f"{raw_score:.2f}" if raw_score > 0 else "0"
+
+    # Build score breakdown HTML
+    score_breakdown_html = f"""
+    <div style="font-size: 10px; color: #666; margin-top: 5px;">
+        <b>Score componenten:</b><br>
+        MT Warmte: {score_breakdown['mt_warmte_mwth']:.2f} MW |
+        Datacenter: {score_breakdown['datacenter_vermogen']:.2f} MW |
+        Condens: {score_breakdown['condens_tj_mt']:.2f} TJ
+    </div>
+    """
+
     popup_html = f"""
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 500px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
         <h3 style="color: white; margin: 0 0 10px 0; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
             🏢 RVB Building
         </h3>
@@ -375,22 +673,42 @@ for idx, row in rvb_points.iterrows():
                 <tr><td><b>Status:</b></td><td>{row.get('AFSTOOTSTA', 'N/A')}</td></tr>
                 <tr><td><b>Area:</b></td><td>{row.get('Shape_Area', 0):.2f} m²</td></tr>
                 <tr><td><b>Bouwwerkfunctie:</b></td><td>{row.get('Bouwwerkfunctie', 'N/A')}</td></tr>
+                <tr><td><b>Max Vermogen:</b></td><td>{max_vermogen if pd.notna(max_vermogen) else 'N/A'}</td></tr>
+                <tr><td><b>Contractcapaciteit:</b></td><td>{contractcapaciteit if pd.notna(contractcapaciteit) else 'N/A'}</td></tr>
+                <tr><td><b>Verbruik Ratio:</b></td><td>{f"{verbruik_ratio:.1f}%" if verbruik_ratio else 'N/A'}</td></tr>
             </table>
         </div>
 
+        <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+            <h4 style="margin: 0 0 8px 0; color: #1a5490;">⚡ Oordeel Verbruik</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="background: {oordeel_color}; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">{oordeel_base}</span>
+                    {f'<span style="margin-left: 10px;">→</span> <span style="background: {adjusted_color}; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">{adjusted_oordeel}</span>' if adjusted_oordeel != oordeel_base else ''}
+                </div>
+            </div>
+            {f'<p style="margin: 8px 0 0 0; font-size: 11px; color: #666;">{warmte_potential}</p>' if warmte_potential else ''}
+        </div>
+
+        <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+            <h4 style="margin: 0 0 8px 0; color: #1a5490;">🔥 Warmte Besparing Score</h4>
+            <div style="font-size: 28px; font-weight: bold; color: #1a5490;">{score_display}</div>
+            {score_breakdown_html}
+        </div>
+
         <div style="background: white; padding: 12px; border-radius: 8px;">
-            <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nearby Heat Sources (within 10km)</h4>
+            <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nabije Warmtebronnen (&lt;1km)</h4>
             <div style="margin-bottom: 10px;">{chart_html}</div>
             <div style="max-height: 200px; overflow-y: auto;">
                 <table style="width: 100%; font-size: 11px;">
                     <thead style="background: #f5f5f5; position: sticky; top: 0;">
-                        <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Name</th><th style="padding: 4px; text-align: left;">Distance</th></tr>
+                        <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Naam</th><th style="padding: 4px; text-align: left;">Vermogen</th><th style="padding: 4px; text-align: left;">Afstand</th></tr>
                     </thead>
-                    <tbody>{sources_html if sources_html else '<tr><td colspan="3" style="text-align: center; padding: 10px; color: #999;">No sources within 10km</td></tr>'}</tbody>
+                    <tbody>{sources_html if sources_html else '<tr><td colspan="4" style="text-align: center; padding: 10px; color: #999;">Geen bronnen binnen 1km</td></tr>'}</tbody>
                 </table>
             </div>
             <p style="margin: 10px 0 0 0; font-size: 10px; color: #666; text-align: center;">
-                <b>Total: {len(nearby_sources)} sources</b>
+                <b>Totaal: {len(nearby_sources)} bronnen</b>
             </p>
         </div>
     </div>
@@ -398,9 +716,9 @@ for idx, row in rvb_points.iterrows():
 
     folium.Marker(
         location=[row.geometry.y, row.geometry.x],
-        popup=folium.Popup(popup_html, max_width=500),
-        tooltip=f"🏢 RVB: {row.get('BOUWWERKCO', 'N/A')} | Click for analysis",
-        icon=make_triangle_icon(row["marker_color"])
+        popup=folium.Popup(popup_html, max_width=550),
+        tooltip=f"🏢 RVB: {row.get('BOUWWERKCO', 'N/A')} | Score: {score_display} | Click for analysis",
+        icon=make_triangle_icon(adjusted_color if raw_score > 0 and oordeel_base != adjusted_oordeel else oordeel_color)
     ).add_to(rvb_group)
 
 
@@ -422,37 +740,49 @@ for geojson_file in bovenregionaal_files:
         filename = os.path.basename(geojson_file).replace('.geojson', '')
 
         for idx, row in gdf_def_wgs84.iterrows():
-            # Calculate distances to all warmte sources
             lat, lon = row["centroid_wgs84"].y, row["centroid_wgs84"].x
             nearby_sources = []
 
+            # Only include sources within 1km
             for source in all_warmte_sources:
-                from math import radians, cos, sin, asin, sqrt
-                lon1, lat1, lon2, lat2 = map(radians, [lon, lat, source['lon'], source['lat']])
-                dlon = lon2 - lon1
-                dlat = lat2 - lat1
-                a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-                c = 2 * asin(sqrt(a))
-                km = 6371 * c
-                if km <= 15:  # Within 15km for Defensie
+                km = haversine_km(lon, lat, source['lon'], source['lat'])
+                if km <= 1.0:  # Within 1km only
                     nearby_sources.append({**source, 'distance': km})
 
             nearby_sources.sort(key=lambda x: x['distance'])
-            nearby_sources = nearby_sources[:15]  # Top 15 nearest
 
+            # Calculate warmte score WITH geothermie for Defensie
+            raw_score, score_breakdown = calculate_warmte_score(lat, lon, all_warmte_sources, geothermie_gdf, include_geothermie=True)
+
+            # Build analytics HTML with power column
             sources_html = ""
             type_counts = {}
             for s in nearby_sources:
                 type_counts[s['type']] = type_counts.get(s['type'], 0) + 1
-                sources_html += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 4px;"><span style="color: {s["color"]};">●</span> {s["type"]}</td><td style="padding: 4px;">{s["name"][:20]}</td><td style="padding: 4px;">{s["distance"]:.2f} km</td></tr>'
+                power_display = s.get('power_display', 'N/A')
+                sources_html += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 4px;"><span style="color: {s["color"]};">●</span> {s["type"]}</td><td style="padding: 4px;">{s["name"][:18]}</td><td style="padding: 4px;">{power_display}</td><td style="padding: 4px;">{s["distance"]*1000:.0f}m</td></tr>'
 
             chart_html = ""
             for stype, count in type_counts.items():
                 pct = (count / len(nearby_sources) * 100) if nearby_sources else 0
                 chart_html += f'<div style="background: #e0e0e0; margin: 2px 0; border-radius: 3px;"><div style="background: linear-gradient(90deg, #1a5490, #42a5f5); width: {pct}%; padding: 2px 5px; color: white; font-size: 10px; border-radius: 3px;">{stype}: {count}</div></div>'
 
+            # Format score display
+            score_display = f"{raw_score:.2f}" if raw_score > 0 else "0"
+
+            # Build score breakdown HTML with geothermie
+            score_breakdown_html = f"""
+            <div style="font-size: 10px; color: #666; margin-top: 5px;">
+                <b>Score componenten:</b><br>
+                MT Warmte: {score_breakdown['mt_warmte_mwth']:.2f} MW |
+                Datacenter: {score_breakdown['datacenter_vermogen']:.2f} MW |
+                Condens: {score_breakdown['condens_tj_mt']:.2f} TJ<br>
+                <b style="color: #FF8C00;">Geothermie: {score_breakdown['geothermie_heat']:.2f}</b>
+            </div>
+            """
+
             popup_html = f"""
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 500px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
                 <h3 style="color: white; margin: 0 0 10px 0; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
                     🛡️ Defensie VKA - Bovenregionaal
                 </h3>
@@ -462,19 +792,26 @@ for geojson_file in bovenregionaal_files:
                         <tr><td><b>File:</b></td><td>{filename[:30]}</td></tr>
                     </table>
                 </div>
+
+                <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">🔥 Warmte Besparing Score (incl. Geothermie)</h4>
+                    <div style="font-size: 28px; font-weight: bold; color: #1a5490;">{score_display}</div>
+                    {score_breakdown_html}
+                </div>
+
                 <div style="background: white; padding: 12px; border-radius: 8px;">
-                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nearby Heat Sources (within 15km)</h4>
+                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nabije Warmtebronnen (&lt;1km)</h4>
                     <div style="margin-bottom: 10px;">{chart_html}</div>
                     <div style="max-height: 200px; overflow-y: auto;">
                         <table style="width: 100%; font-size: 11px;">
                             <thead style="background: #f5f5f5; position: sticky; top: 0;">
-                                <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Name</th><th style="padding: 4px; text-align: left;">Distance</th></tr>
+                                <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Naam</th><th style="padding: 4px; text-align: left;">Vermogen</th><th style="padding: 4px; text-align: left;">Afstand</th></tr>
                             </thead>
-                            <tbody>{sources_html if sources_html else '<tr><td colspan="3" style="text-align: center; padding: 10px; color: #999;">No sources within 15km</td></tr>'}</tbody>
+                            <tbody>{sources_html if sources_html else '<tr><td colspan="4" style="text-align: center; padding: 10px; color: #999;">Geen bronnen binnen 1km</td></tr>'}</tbody>
                         </table>
                     </div>
                     <p style="margin: 10px 0 0 0; font-size: 10px; color: #666; text-align: center;">
-                        <b>Total: {len(nearby_sources)} sources</b>
+                        <b>Totaal: {len(nearby_sources)} bronnen</b>
                     </p>
                 </div>
             </div>
@@ -482,8 +819,8 @@ for geojson_file in bovenregionaal_files:
 
             folium.Marker(
                 location=[row["centroid_wgs84"].y, row["centroid_wgs84"].x],
-                popup=folium.Popup(popup_html, max_width=500),
-                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Click for analysis",
+                popup=folium.Popup(popup_html, max_width=550),
+                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Score: {score_display} | Click for analysis",
                 icon=triangle_icon
             ).add_to(defensie_boven_group)
     except Exception as e:
@@ -509,33 +846,46 @@ for geojson_file in locatiespecifiek_files:
             lat, lon = row["centroid_wgs84"].y, row["centroid_wgs84"].x
             nearby_sources = []
 
+            # Only include sources within 1km
             for source in all_warmte_sources:
-                from math import radians, cos, sin, asin, sqrt
-                lon1, lat1, lon2, lat2 = map(radians, [lon, lat, source['lon'], source['lat']])
-                dlon = lon2 - lon1
-                dlat = lat2 - lat1
-                a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-                c = 2 * asin(sqrt(a))
-                km = 6371 * c
-                if km <= 15:
+                km = haversine_km(lon, lat, source['lon'], source['lat'])
+                if km <= 1.0:  # Within 1km only
                     nearby_sources.append({**source, 'distance': km})
 
             nearby_sources.sort(key=lambda x: x['distance'])
-            nearby_sources = nearby_sources[:15]
 
+            # Calculate warmte score WITH geothermie for Defensie
+            raw_score, score_breakdown = calculate_warmte_score(lat, lon, all_warmte_sources, geothermie_gdf, include_geothermie=True)
+
+            # Build analytics HTML with power column
             sources_html = ""
             type_counts = {}
             for s in nearby_sources:
                 type_counts[s['type']] = type_counts.get(s['type'], 0) + 1
-                sources_html += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 4px;"><span style="color: {s["color"]};">●</span> {s["type"]}</td><td style="padding: 4px;">{s["name"][:20]}</td><td style="padding: 4px;">{s["distance"]:.2f} km</td></tr>'
+                power_display = s.get('power_display', 'N/A')
+                sources_html += f'<tr style="border-bottom: 1px solid #eee;"><td style="padding: 4px;"><span style="color: {s["color"]};">●</span> {s["type"]}</td><td style="padding: 4px;">{s["name"][:18]}</td><td style="padding: 4px;">{power_display}</td><td style="padding: 4px;">{s["distance"]*1000:.0f}m</td></tr>'
 
             chart_html = ""
             for stype, count in type_counts.items():
                 pct = (count / len(nearby_sources) * 100) if nearby_sources else 0
                 chart_html += f'<div style="background: #e0e0e0; margin: 2px 0; border-radius: 3px;"><div style="background: linear-gradient(90deg, #1a5490, #42a5f5); width: {pct}%; padding: 2px 5px; color: white; font-size: 10px; border-radius: 3px;">{stype}: {count}</div></div>'
 
+            # Format score display
+            score_display = f"{raw_score:.2f}" if raw_score > 0 else "0"
+
+            # Build score breakdown HTML with geothermie
+            score_breakdown_html = f"""
+            <div style="font-size: 10px; color: #666; margin-top: 5px;">
+                <b>Score componenten:</b><br>
+                MT Warmte: {score_breakdown['mt_warmte_mwth']:.2f} MW |
+                Datacenter: {score_breakdown['datacenter_vermogen']:.2f} MW |
+                Condens: {score_breakdown['condens_tj_mt']:.2f} TJ<br>
+                <b style="color: #FF8C00;">Geothermie: {score_breakdown['geothermie_heat']:.2f}</b>
+            </div>
+            """
+
             popup_html = f"""
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 450px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 500px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
                 <h3 style="color: white; margin: 0 0 10px 0; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
                     🛡️ Defensie VKA - Locatiespecifiek
                 </h3>
@@ -545,19 +895,26 @@ for geojson_file in locatiespecifiek_files:
                         <tr><td><b>File:</b></td><td>{filename[:30]}</td></tr>
                     </table>
                 </div>
+
+                <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">🔥 Warmte Besparing Score (incl. Geothermie)</h4>
+                    <div style="font-size: 28px; font-weight: bold; color: #1a5490;">{score_display}</div>
+                    {score_breakdown_html}
+                </div>
+
                 <div style="background: white; padding: 12px; border-radius: 8px;">
-                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nearby Heat Sources (within 15km)</h4>
+                    <h4 style="margin: 0 0 8px 0; color: #1a5490;">📊 Nabije Warmtebronnen (&lt;1km)</h4>
                     <div style="margin-bottom: 10px;">{chart_html}</div>
                     <div style="max-height: 200px; overflow-y: auto;">
                         <table style="width: 100%; font-size: 11px;">
                             <thead style="background: #f5f5f5; position: sticky; top: 0;">
-                                <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Name</th><th style="padding: 4px; text-align: left;">Distance</th></tr>
+                                <tr><th style="padding: 4px; text-align: left;">Type</th><th style="padding: 4px; text-align: left;">Naam</th><th style="padding: 4px; text-align: left;">Vermogen</th><th style="padding: 4px; text-align: left;">Afstand</th></tr>
                             </thead>
-                            <tbody>{sources_html if sources_html else '<tr><td colspan="3" style="text-align: center; padding: 10px; color: #999;">No sources within 15km</td></tr>'}</tbody>
+                            <tbody>{sources_html if sources_html else '<tr><td colspan="4" style="text-align: center; padding: 10px; color: #999;">Geen bronnen binnen 1km</td></tr>'}</tbody>
                         </table>
                     </div>
                     <p style="margin: 10px 0 0 0; font-size: 10px; color: #666; text-align: center;">
-                        <b>Total: {len(nearby_sources)} sources</b>
+                        <b>Totaal: {len(nearby_sources)} bronnen</b>
                     </p>
                 </div>
             </div>
@@ -565,8 +922,8 @@ for geojson_file in locatiespecifiek_files:
 
             folium.Marker(
                 location=[row["centroid_wgs84"].y, row["centroid_wgs84"].x],
-                popup=folium.Popup(popup_html, max_width=500),
-                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Click for analysis",
+                popup=folium.Popup(popup_html, max_width=550),
+                tooltip=f"🛡️ Defensie: {row.get('Naam', filename)} | Score: {score_display} | Click for analysis",
                 icon=triangle_icon
             ).add_to(defensie_loc_group)
     except Exception as e:
@@ -724,7 +1081,70 @@ condens_file = 'Download-LT CondensWarmte uit Koelprocessen-CSV.csv'
 if condens_file in warmte_data:
     cw_df = warmte_data[condens_file]
 
-    if 'X' in cw_df.columns and 'Y' in cw_df.columns:
+    # This file has 'Plaats' instead of X,Y - use geocoding (cache already populated)
+    if 'Plaats' in cw_df.columns:
+        cw_with_plaats = cw_df.dropna(subset=['Plaats'])
+        geocoded_markers = []
+
+        for idx, row in cw_with_plaats.iterrows():
+            plaats = row['Plaats']
+            x, y = geocode_plaats(plaats, geocode_cache)
+            if x is not None and y is not None:
+                geocoded_markers.append({
+                    'X': x,
+                    'Y': y,
+                    'Naam': row.get('Naam', 'N/A'),
+                    'Plaats': plaats,
+                    'TJ_CondWarmte': row.get('TJ_CondWarmte', 'N/A'),
+                    'SBINaam': row.get('SBINaam', 'N/A')
+                })
+
+        if geocoded_markers:
+            geocoded_df = pd.DataFrame(geocoded_markers)
+            gdf_cw = gpd.GeoDataFrame(
+                geocoded_df,
+                geometry=gpd.points_from_xy(geocoded_df['X'], geocoded_df['Y']),
+                crs='EPSG:28992'
+            )
+            gdf_cw = gdf_cw.to_crs(epsg=4326)
+
+            for idx, row in gdf_cw.iterrows():
+                # Format TJ value for display
+                tj_value = row.get('TJ_CondWarmte', 'N/A')
+                if isinstance(tj_value, (int, float)):
+                    tj_display = f"{tj_value:.2f} TJ"
+                else:
+                    tj_display = str(tj_value)
+
+                popup_html = f"""
+                <div style="font-family: Arial; width: 280px;">
+                    <h4 style="color: #32CD32; margin-bottom: 10px; border-bottom: 2px solid #32CD32;">
+                        ❄️ Condens Warmte (Koelprocessen)
+                    </h4>
+                    <table style="width: 100%; font-size: 12px;">
+                        <tr><td><b>Naam:</b></td><td>{row.get('Naam', 'N/A')}</td></tr>
+                        <tr><td><b>Sector:</b></td><td>{row.get('SBINaam', 'N/A')}</td></tr>
+                        <tr><td><b>Plaats:</b></td><td>{row.get('Plaats', 'N/A')}</td></tr>
+                        <tr><td><b>Condens Warmte:</b></td><td>{tj_display}</td></tr>
+                    </table>
+                </div>
+                """
+
+                folium.CircleMarker(
+                    location=[row.geometry.y, row.geometry.x],
+                    radius=6,
+                    popup=folium.Popup(popup_html, max_width=300),
+                    tooltip=f"Condens: {row.get('Naam', 'N/A')} ({row.get('Plaats', '')})",
+                    color='#228B22',
+                    fillColor='#32CD32',
+                    fillOpacity=0.7,
+                    weight=2
+                ).add_to(condens_warmte_group)
+
+            print(f"  ✓ Added {len(gdf_cw)} condens warmte sources (geocoded)")
+
+    elif 'X' in cw_df.columns and 'Y' in cw_df.columns:
+        # Fallback to X,Y if available
         cw_with_coords = cw_df.dropna(subset=['X', 'Y'])
 
         if len(cw_with_coords) > 0:
