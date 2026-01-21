@@ -256,6 +256,7 @@ rvb_points["radius"] = 4 + (rvb_points["energy_proxy"] - min_area) / (max_area -
 rvb_points['vermogen/capacity']= rvb_points['Max vermogen verbruik'] / rvb_points['Toekomstige contractcapaciteit'] * 100
 rvb_points['WP aanwezig'] = rvb_points['WP vermogen'].apply(lambda x: 'Ja' if x > 0 else 'Nee')
 
+
 """
 # Define a function to calculate gradient color based on vermogen/capacity
 def get_gradient_color(value):
@@ -436,6 +437,22 @@ center_lon = rvb_points.geometry.x.mean()
 print("\n" + "=" * 80)
 print("CREATING INTERACTIVE MAP...")
 print("=" * 80)
+#====================== LOAD Warmte Net Data and Merge with Buurtkaart ======================
+warmte_net = pd.read_excel("data/Warmte_net_data/Download-WarmteNetten-XLS.xlsx", header=0)
+
+# Define the folder path
+folder_path = "data/Warmte_net_data/Buurtkaart_2020_v3"
+# List all files in the folder
+files = [os.path.join(folder_path, file) for file in os.listdir(folder_path) if file.endswith('.shp')]
+
+# Read all shapefiles into a list of GeoDataFrames
+buurtkaarten = [gpd.read_file(file) for file in files]
+
+# Display the first few rows of each GeoDataFrame
+for i, buurtkaart in enumerate(buurtkaarten):
+    buurtkaarten[i] = buurtkaart[['BU_CODE', 'geometry']]   
+buurtkaart_gdf = gpd.GeoDataFrame(pd.concat(buurtkaarten, ignore_index=True), crs=buurtkaarten[0].crs)
+buurt_warmte_net = buurtkaart_gdf.merge(warmte_net, on='BU_CODE', how='inner')
 
 # ============ CREATE BASE MAP ============
 m = folium.Map(
@@ -1510,6 +1527,30 @@ HeatMap(
     }
 ).add_to(heatmap_group)
 heatmap_group.add_to(m)
+
+#============= WarmteNet LAYER ============
+
+# Add buurt_warmte_net areas to the map
+Warmte_net_group = folium.FeatureGroup(name='🏘️ Warmte Net Areas', show=True)
+
+for _, row in buurt_warmte_net.iterrows():
+    folium.GeoJson(
+        row['geometry'],
+        style_function=lambda x: {
+            'fillColor': "#FF00C3",
+            'color': "#FF227A",
+            'weight': 1,
+            'fillOpacity': 0.5
+        },
+        tooltip=folium.GeoJsonTooltip(
+            fields=['BU_CODE', 'BU_NAAM'],
+            aliases=['Buurt Code:', 'Buurt Naam:'],
+            localize=True
+        )
+    ).add_to(Warmte_net_group)
+
+Warmte_net_group.add_to(m)
+
 
 # ============ PLUGINS ============
 minimap = MiniMap(toggle_display=True)
