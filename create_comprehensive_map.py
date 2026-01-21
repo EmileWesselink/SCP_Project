@@ -254,6 +254,7 @@ min_area = rvb_points["energy_proxy"].min()
 max_area = rvb_points["energy_proxy"].max()
 rvb_points["radius"] = 4 + (rvb_points["energy_proxy"] - min_area) / (max_area - min_area) * 14
 rvb_points['vermogen/capacity']= rvb_points['Max vermogen verbruik'] / rvb_points['Toekomstige contractcapaciteit'] * 100
+rvb_points['WP aanwezig'] = rvb_points['WP vermogen'].apply(lambda x: 'Ja' if x > 0 else 'Nee')
 
 """
 # Define a function to calculate gradient color based on vermogen/capacity
@@ -839,6 +840,7 @@ for idx, row in rvb_points.iterrows():
                 <tr><td><b>EAN:</b></td><td>{row.get('EAN', 'N/A')}</td></tr>
                 <tr><td><b>Bouwwerkfunctie:</b></td><td>{row.get('Bouwwerkfunctie', 'N/A')}</td></tr>
                 <tr><td><b>Contractcapaciteit:</b></td><td>{contractcapaciteit if pd.notna(contractcapaciteit) else 'N/A'} MW</td></tr>
+                <tr><td><b>WP aanwezig:</b></td><td>{row.get('WP aanwezig', 'N/A')}</td></tr>
             </table>
         </div>
 
