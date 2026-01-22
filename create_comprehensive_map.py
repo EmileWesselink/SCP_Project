@@ -1,29 +1,55 @@
 # -*- coding: utf-8 -*-
-# ============================================================================
-# COMPREHENSIVE INTERACTIVE MAP WITH ALL DATA SOURCES
-# Run this file directly: python create_comprehensive_map.py
+"""
+SCP Project - Comprehensive Energy Infrastructure Map
+
+This script creates an interactive map visualizing:
+- RVB (Rijksvastgoedbedrijf) building locations with energy consumption data
+- Warmte (heat) sources: MT Warmte, Datacenters, Industrial waste heat, Geothermal
+- Warmtenetten (heat network) coverage areas
+- Defensie VKA locations with heat potential analysis
+
+Features:
+- Heat savings potential score (0-100) for each building
+- Top 10 buildings with highest growth potential
+- "Op bestaand warmtenet" indicator for each RVB building
+- Interactive popups with detailed analytics
+
+Usage:
+    python create_comprehensive_map.py
+
+Output:
+    comprehensive_energy_map.html - Interactive map file
+
+Author: SCP Project Team
+"""
 # ============================================================================
 
 import sys
 import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+# Standard library imports
+import os
+import glob
+import json
+import base64
+import webbrowser
+
+# Data processing
+import pandas as pd
+import numpy as np
+import geopandas as gpd
+import netCDF4
+import requests
+
+# Visualization
 import folium
 from folium import plugins
 from folium.plugins import HeatMap, MiniMap, Fullscreen, MeasureControl
-import geopandas as gpd
-import pandas as pd
-import numpy as np
-import webbrowser
-import os
-import glob
-from sklearn.neighbors import BallTree
-from scipy.spatial.distance import cdist
-import json
-import base64
-from matplotlib import colors, pyplot as plt
-import requests
-import time
+from matplotlib import colors
+
+# Geometry operations
+from shapely.ops import unary_union
 
 # ============ GEOCODING FUNCTION FOR DUTCH PLACES ============
 def geocode_plaats(plaats_name, cache={}):
@@ -257,26 +283,7 @@ rvb_points['vermogen/capacity']= rvb_points['Max vermogen verbruik'] / rvb_point
 rvb_points['WP aanwezig'] = rvb_points['WP vermogen'].apply(lambda x: 'Ja' if x > 0 else 'Nee')
 
 
-"""
-# Define a function to calculate gradient color based on vermogen/capacity
-def get_gradient_color(value):
-    value = float(value)  # Ensure value is a float
-    if value > 100:
-        # Bright red for value = 100
-        return "#F44336"  # Pure bright red
-    elif 80 <= value <= 100:
-        # Orange gradient for values between 80 and 100
-        norm = (value - 80) / 20  # Normalize to [0, 1]
-        return colors.to_hex((1, max(0.2, 0.6 - 0.4 * norm), 0))  # Ensure orange stays vibrant
-    else:
-        # Green to orange gradient for values < 80
-        norm = value / 80  # Normalize to [0, 1]
-        return colors.to_hex((max(0.2, 1 - norm), min(1, 0.6 + 0.4 * norm), 0))  # Ensure green stays vibrant
-
-# Apply the gradient color function to the 'vermogen/capacity' column
-rvb_points["marker_color"] = rvb_points["vermogen/capacity"].apply(get_gradient_color).fillna("#1a5490")   # fallback if empty/unknown
-"""
-# Map judgement to colors (adjust if you want different shades)
+# Map judgement to colors
 oordeel_color_map = {
     "Groen":  "#4CAF50",
     "Oranje": "#FF9800",
@@ -289,23 +296,6 @@ rvb_points["marker_color"] = (
     .fillna("#1a5490")   # fallback if empty/unknown
 )
 
-
-"""
-def get_color(value, min_val, max_val):
-    if max_val == min_val:
-        return '#FFA500'
-    norm = (value - min_val) / (max_val - min_val)
-    if norm < 0.25:
-        return '#4CAF50'
-    elif norm < 0.5:
-        return '#FFEB3B'
-    elif norm < 0.75:
-        return '#FF9800'
-    else:
-        return '#F44336'
-
-rvb_points["color"] = rvb_points["energy_proxy"].apply(lambda x: get_color(x, min_area, max_area))
-"""
 print(f"✓ Loaded {len(rvb_points)} RVB buildings")
 
 # ============ 2. LOAD DEFENSIE VKA DATA ============
@@ -348,17 +338,7 @@ for key, filepath in tennet_files.items():
 print("\n[4/5] Loading Warmte (heat) data...")
 warmte_data = {}
 
-# --- Libraries ---
-from matplotlib import colors, pyplot as plt
-import pandas as pd
-import numpy as np
-import netCDF4
-import geopandas as gpd
-import glob
-import os
-
-# --- Load NetCDF warmte grid ---
-# Adjust path if your .nc file lives somewhere else
+# Load NetCDF warmte grid
 nc_fp = "data/warmte_data/OVERVIEW_potential_recoverable_heat.nc"
 
 try:
@@ -454,10 +434,32 @@ for i, buurtkaart in enumerate(buurtkaarten):
 buurtkaart_gdf = gpd.GeoDataFrame(pd.concat(buurtkaarten, ignore_index=True), crs=buurtkaarten[0].crs)
 buurt_warmte_net = buurtkaart_gdf.merge(warmte_net, on='BU_CODE', how='inner')
 
+# Convert to WGS84 for Folium compatibility
+buurt_warmte_net = buurt_warmte_net.to_crs(epsg=4326)
+print(f"  Loaded {len(buurt_warmte_net)} warmtenet buurt areas")
+
+# ============ CHECK RVB BUILDINGS ON WARMTE NET ============
+print("Checking which RVB buildings are on existing warmte net...")
+
+# Create a single unified geometry of all warmte net areas for faster spatial check
+warmte_net_union = unary_union(buurt_warmte_net.geometry)
+
+# Check if each RVB point is within the warmte net
+def check_op_warmtenet(point_geom):
+    """Check if a point is within the warmte net coverage area."""
+    try:
+        return 'Ja' if warmte_net_union.contains(point_geom) else 'Nee'
+    except:
+        return 'Nee'
+
+rvb_points['Op bestaand warmtenet'] = rvb_points.geometry.apply(check_op_warmtenet)
+warmtenet_count = (rvb_points['Op bestaand warmtenet'] == 'Ja').sum()
+print(f"  RVB buildings on existing warmte net: {warmtenet_count} / {len(rvb_points)}")
+
 # ============ CREATE BASE MAP ============
 m = folium.Map(
     location=[center_lat, center_lon],
-    zoom_start=7,
+    zoom_start=6,
     tiles=None,
     control_scale=True,
     prefer_canvas=True
@@ -666,6 +668,9 @@ print(f"  ✓ Collected {len(all_warmte_sources)} warmte sources for analytics")
 print("Adding RVB Buildings layer...")
 rvb_group = folium.FeatureGroup(name='🏢 RVB Buildings', show=True)
 
+# Store scores for Top 10 calculation
+rvb_scores_for_top10 = []
+
 # Create custom triangle icon
 triangle_icon = folium.features.CustomIcon(
     icon_image='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIxMCwyIDIsMTggMTgsMTgiIGZpbGw9IiMxYTU0OTAiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48L3N2Zz4=',
@@ -700,6 +705,7 @@ for idx, row in rvb_points.iterrows():
 
     # Calculate warmte score for this location
     raw_score, score_breakdown = calculate_warmte_score(lat, lon, all_warmte_sources, geothermie_gdf, include_geothermie=False)
+    normalized_score = normalize_score(raw_score)
 
     # Calculate oordeel verbruik with warmte score adjustment
     max_vermogen = row.get('Max vermogen verbruik', None)
@@ -756,6 +762,24 @@ for idx, row in rvb_points.iterrows():
                 adjusted_color = "#F44336"
 
         besparing_display = f"-{besparing_warmte:.1f} MW ({(besparing_warmte/totaal_verbruik*100):.0f}%)" if totaal_verbruik > 0 else ""
+
+    # Store data for Top 10 potentiële groei calculation
+    # Potentiële groei = besparing potential (higher = more to gain from warmte)
+    rvb_scores_for_top10.append({
+        'code': row.get('BOUWWERKCO', 'N/A'),
+        'naam': row.get('Objectnaam', row.get('BOUWWERKCO', 'N/A')),
+        'besparing_mw': besparing_warmte,
+        'raw_score': raw_score,
+        'normalized_score': normalized_score,
+        'totaal_verbruik': totaal_verbruik if totaal_verbruik else 0,
+        'oordeel_base': oordeel_base,
+        'oordeel_color_base': oordeel_color,
+        'adjusted_oordeel': adjusted_oordeel,
+        'adjusted_color': adjusted_color,
+        'op_warmtenet': row.get('Op bestaand warmtenet', 'Nee'),
+        'lat': row.geometry.y,
+        'lon': row.geometry.x
+    })
 
     # Build analytics HTML with power column
     sources_html = ""
@@ -858,6 +882,7 @@ for idx, row in rvb_points.iterrows():
                 <tr><td><b>Bouwwerkfunctie:</b></td><td>{row.get('Bouwwerkfunctie', 'N/A')}</td></tr>
                 <tr><td><b>Contractcapaciteit:</b></td><td>{contractcapaciteit if pd.notna(contractcapaciteit) else 'N/A'} MW</td></tr>
                 <tr><td><b>WP aanwezig:</b></td><td>{row.get('WP aanwezig', 'N/A')}</td></tr>
+                <tr><td><b>Op bestaand warmtenet:</b></td><td style="color: {'#4CAF50' if row.get('Op bestaand warmtenet') == 'Ja' else '#F44336'}; font-weight: bold;">{row.get('Op bestaand warmtenet', 'N/A')}</td></tr>
             </table>
         </div>
 
@@ -868,13 +893,11 @@ for idx, row in rvb_points.iterrows():
                     <div style="font-size: 10px; color: #666; margin-bottom: 4px;">HUIDIG</div>
                     <span style="background: {oordeel_color}; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; display: inline-block;">{oordeel_base}</span>
                 </div>
-                {f'''
                 <div style="font-size: 20px; color: #1a5490;">→</div>
                 <div style="text-align: center;">
                     <div style="font-size: 10px; color: #666; margin-bottom: 4px;">MET WARMTE</div>
                     <span style="background: {adjusted_color}; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; display: inline-block;">{adjusted_oordeel}</span>
                 </div>
-                ''' if besparing_warmte > 0 and oordeel_base != adjusted_oordeel else ''}
             </div>
             {verbruik_html}
         </div>
@@ -910,13 +933,43 @@ for idx, row in rvb_points.iterrows():
     folium.Marker(
         location=[row.geometry.y, row.geometry.x],
         popup=folium.Popup(popup_html, max_width=570),
-        tooltip=f"🏢 RVB: {row.get('BOUWWERKCO', 'N/A')} | {oordeel_base}{'→'+adjusted_oordeel if besparing_warmte > 0 and oordeel_base != adjusted_oordeel else ''} | Score: {normalized_score:.0f}/100",
+        tooltip=f"🏢 RVB: {row.get('BOUWWERKCO', 'N/A')} | {oordeel_base}→{adjusted_oordeel} | Score: {normalized_score:.0f}/100",
         icon=make_triangle_icon(marker_color)
     ).add_to(rvb_group)
 
 
 
 rvb_group.add_to(m)
+
+# ============ CALCULATE TOP 10 POTENTIËLE GROEI ============
+print("Calculating Top 10 potentiële groei...")
+
+# Sort by besparing potential (highest first) - only include buildings with potential > 0
+top10_candidates = [r for r in rvb_scores_for_top10 if r['besparing_mw'] > 0]
+top10_candidates.sort(key=lambda x: x['besparing_mw'], reverse=True)
+top10_groei = top10_candidates[:10]
+
+# Build the Top 10 table HTML rows - need map variable name for flyTo
+map_name = m.get_name()
+top10_rows_html = ""
+for i, item in enumerate(top10_groei, 1):
+    base_color = item.get('oordeel_color_base', "#808080")
+    adj_color = item.get('adjusted_color', "#808080")
+    warmtenet_icon = "✓" if item['op_warmtenet'] == 'Ja' else "✗"
+    warmtenet_color = "#4CAF50" if item['op_warmtenet'] == 'Ja' else "#999"
+    lat, lon = item['lat'], item['lon']
+    top10_rows_html += f"""
+    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer;" onclick="{map_name}.flyTo([{lat}, {lon}], 16);" title="Klik om naar locatie te gaan">
+        <td style="padding: 6px 8px; color: rgba(255,255,255,0.9); font-weight: bold;">{i}</td>
+        <td style="padding: 6px 8px; color: #64B5F6; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline;" title="{item['naam']}">{item['code']}</td>
+        <td style="padding: 6px 8px; color: #4CAF50; font-weight: bold;">{item['besparing_mw']:.1f}</td>
+        <td style="padding: 6px 8px; color: rgba(255,255,255,0.7);">{item['totaal_verbruik']:.1f}</td>
+        <td style="padding: 6px 8px;"><span style="color: {base_color};">●</span><span style="color: rgba(255,255,255,0.5);">→</span><span style="color: {adj_color};">●</span></td>
+        <td style="padding: 6px 8px; color: {warmtenet_color};">{warmtenet_icon}</td>
+    </tr>
+    """
+
+print(f"  Top 10 buildings with highest besparing potential identified")
 
 # ============ DEFENSIE VKA - BOVENREGIONAAL ============
 print("Adding Defensie VKA - Bovenregionaal layer...")
@@ -1534,8 +1587,20 @@ heatmap_group.add_to(m)
 Warmte_net_group = folium.FeatureGroup(name='🏘️ Warmte Net Areas', show=True)
 
 for _, row in buurt_warmte_net.iterrows():
+    # Create a GeoJSON feature with properties for the tooltip
+    geojson_feature = {
+        "type": "Feature",
+        "geometry": row['geometry'].__geo_interface__,
+        "properties": {
+            "BU_CODE": row.get('BU_CODE', 'N/A'),
+            "BU_NAAM": row.get('BU_NAAM', 'N/A'),
+            "GM_NAAM": row.get('GM_NAAM', 'N/A'),
+            "WONINGEN": row.get('WONINGEN', 'N/A')
+        }
+    }
+
     folium.GeoJson(
-        row['geometry'],
+        geojson_feature,
         style_function=lambda x: {
             'fillColor': "#FF00C3",
             'color': "#FF227A",
@@ -1543,12 +1608,13 @@ for _, row in buurt_warmte_net.iterrows():
             'fillOpacity': 0.5
         },
         tooltip=folium.GeoJsonTooltip(
-            fields=['BU_CODE', 'BU_NAAM'],
-            aliases=['Buurt Code:', 'Buurt Naam:'],
+            fields=['BU_CODE', 'BU_NAAM', 'GM_NAAM', 'WONINGEN'],
+            aliases=['Buurt Code:', 'Buurt Naam:', 'Gemeente:', 'Woningen:'],
             localize=True
         )
     ).add_to(Warmte_net_group)
 
+print(f"  Added {len(buurt_warmte_net)} warmte net polygons to map")
 Warmte_net_group.add_to(m)
 
 
@@ -1653,6 +1719,58 @@ legend_html = '''
 </div>
 '''
 m.get_root().html.add_child(folium.Element(legend_html))
+
+# ============ TOP 10 POTENTIËLE GROEI PANEL ============
+map_var_name = m.get_name()
+top10_html = f'''
+<style>
+    #top10-panel tr:hover {{
+        background: rgba(255,255,255,0.1) !important;
+    }}
+</style>
+<div id="top10-panel" style="position: fixed; top: 80px; left: 10px; width: 400px;
+            background: linear-gradient(135deg, rgba(30,60,114,0.95) 0%, rgba(42,82,152,0.95) 100%);
+            border-radius: 12px; z-index: 9998;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); overflow: hidden;">
+    <div id="top10-header" style="padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+                border-bottom: 1px solid rgba(255,255,255,0.2);"
+         onclick="var content = document.getElementById('top10-content'); var arrow = document.getElementById('top10-arrow');
+                  if(content.style.display === 'none') {{ content.style.display = 'block'; arrow.innerHTML = '▼'; }}
+                  else {{ content.style.display = 'none'; arrow.innerHTML = '▶'; }}">
+        <h4 style="margin: 0; color: white; font-size: 15px; font-weight: 600; letter-spacing: -0.3px;">
+            🏆 Top 10 Potentiële Groei
+        </h4>
+        <span id="top10-arrow" style="color: white; font-size: 12px;">▼</span>
+    </div>
+    <div id="top10-content" style="padding: 12px 16px; max-height: 350px; overflow-y: auto;">
+        <p style="color: rgba(255,255,255,0.6); font-size: 10px; margin: 0 0 10px 0;">
+            Gebouwen met hoogste warmte-besparingspotentieel · Klik op rij om naar locatie te gaan
+        </p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead>
+                <tr style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+                    <th style="padding: 6px 8px; text-align: left; color: rgba(255,255,255,0.7);">#</th>
+                    <th style="padding: 6px 8px; text-align: left; color: rgba(255,255,255,0.7);">Code</th>
+                    <th style="padding: 6px 8px; text-align: left; color: rgba(255,255,255,0.7);">Besp.</th>
+                    <th style="padding: 6px 8px; text-align: left; color: rgba(255,255,255,0.7);">Verbr.</th>
+                    <th style="padding: 6px 8px; text-align: left; color: rgba(255,255,255,0.7);">Oord.</th>
+                    <th style="padding: 6px 8px; text-align: left; color: rgba(255,255,255,0.7);">WN</th>
+                </tr>
+            </thead>
+            <tbody>
+                {top10_rows_html}
+            </tbody>
+        </table>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.15);
+                    color: rgba(255,255,255,0.5); font-size: 9px;">
+            <b>Legenda:</b> Besp. = Besparing (MW) | Verbr. = Verbruik (MW) | Oord. = Huidig→Met warmte | WN = Op Warmtenet
+        </div>
+    </div>
+</div>
+'''
+m.get_root().html.add_child(folium.Element(top10_html))
 
 # ============ SAVE AND OPEN ============
 output_file = "comprehensive_energy_map.html"

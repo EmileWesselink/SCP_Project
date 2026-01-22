@@ -1,117 +1,119 @@
-# SCP Project - RVB Warmtepotentie Kaart
+# SCP Project - Net Congestion Analytics Platform
 
-Een interactieve kaart die het warmte-besparingspotentieel van RVB (Rijksvastgoedbedrijf) locaties visualiseert op basis van nabijgelegen warmtebronnen.
+An interactive map platform for analyzing heat network potential and energy consumption of Dutch government (RVB) properties, supporting decisions to reduce net congestion through local heat source utilization.
 
-## Overzicht
+## Quick Start
 
-Deze kaart combineert gegevens van RVB-locaties met diverse warmtebronnen om te analyseren hoe gebouwen kunnen bijdragen aan de vermindering van netcongestie door gebruik te maken van lokale warmtebronnen.
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/SCP_Project.git
+cd SCP_Project
 
-## Kaartlagen
+# 2. Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-De kaart bevat de volgende lagen (in/uit te schakelen via het lagenmenu):
+# 3. Install dependencies
+pip install -r requirements.txt
 
-### Basislagen
-- **Light Map** - Lichte achtergrondkaart (standaard)
-- **Street Map** - OpenStreetMap stijl
-- **Dark Map** - Donkere achtergrondkaart
-- **Netherlands Boundary** - Landsgrens Nederland
-
-### RVB Locaties
-- **RVB Buildings** - Alle RVB-panden (driehoek markers)
-- **Defensie Locaties** - Defensie-specifieke locaties (oranje markers)
-
-### Warmtebronnen
-- **Warmte Bronnen (MT)** - Midden-temperatuur warmtebronnen uit de PBL startanalyse
-- **Datacenter Warmte** - Restwarmte van datacenters
-- **PDOK Restwarmte (Industrie)** - Industriele restwarmte via PDOK WFS
-- **Condens Warmte (Koelprocessen)** - Condenswarmte uit koelprocessen
-- **ThermoGIS Geothermie** - Aardwarmte potentie (heatmap)
-
-### Analyse
-- **Netcongestie Gebieden** - Gebieden met netcongestie (rood/oranje)
-
-## Popup Informatie
-
-Klik op een RVB-locatie om gedetailleerde informatie te zien:
-
-### Basisinformatie
-- Objectnaam en adres
-- Eigenaar en bouwwerkfunctie
-- Contractcapaciteit en maximaal verbruik
-
-### Warmte Score ("Mogelijke Besparing Warmte Opwek")
-
-De score geeft aan hoeveel warmte-besparingspotentie een locatie heeft op basis van nabijgelegen warmtebronnen (< 1 km). De score bestaat uit:
-
-| Component | Bron | Eenheid |
-|-----------|------|---------|
-| MT Warmte | PBL Startanalyse | MW thermisch |
-| Datacenter (>60°C) | Datacenters met temperatuur > 60°C | MW |
-| PDOK Restwarmte | Industriele restwarmte (PDOK) | TJ |
-| Condens Warmte | Koelprocessen | TJ |
-| Geothermie | ThermoGIS (alleen Defensie) | - |
-
-De ruwe score wordt omgezet naar een genormaliseerde schaal (0-100):
-- **0-20**: Zeer Laag - nauwelijks warmtebronnen beschikbaar
-- **20-40**: Laag - beperkte warmtebronnen
-- **40-60**: Gemiddeld - redelijke warmtepotentie
-- **60-80**: Hoog - goede warmtepotentie
-- **80-100**: Zeer Hoog - uitstekende warmtepotentie
-
-### Verbruik Oordeel
-
-Het oordeel wordt bepaald door de verhouding tussen maximaal verbruik en contractcapaciteit:
-- **Groen**: ≤ 80% van contractcapaciteit benut
-- **Oranje**: 80-100% van contractcapaciteit benut
-- **Rood**: > 100% van contractcapaciteit benut
-- **Onbekend**: Geen verbruiksgegevens beschikbaar
-
-### Nieuw Totaal Verbruik
-
-Laat zien hoe het verbruik zou verbeteren met warmtebesparing:
-```
-Nieuw Totaal Verbruik = Totaal Verbruik - Besparing Warmte Opwek
+# 4. Run the script
+python create_comprehensive_map.py
 ```
 
-De popup toont twee oordeel-kleuren:
-- **HUIDIG**: Het huidige verbruiksoordeel
-- **MET WARMTE**: Het oordeel na toepassing van warmtebesparing
+The script generates `comprehensive_energy_map.html` and opens it in your browser.
 
-### Nabijgelegen Warmtebronnen
+## Project Structure
 
-Een overzichtstabel toont alle warmtebronnen binnen 1 km met:
-- Type warmtebron
-- Naam van de bron
-- Vermogen/energie capaciteit
-- Afstand tot de RVB-locatie
+```
+SCP_Project/
+├── create_comprehensive_map.py   # Main script - generates the interactive map
+├── requirements.txt              # Python dependencies
+├── README.md                     # This file
+├── MANUAL.md                     # Detailed user manual (kaartlagen, scores, etc.)
+├── comprehensive_energy_map.html # Generated output (after running script)
+└── data/                         # Data directory (see Data Sources below)
+    ├── Bouwwerken_netcongestie_data/   # RVB buildings shapefile
+    ├── Country_data/                    # Netherlands boundary
+    ├── defensie_data/                   # Defensie VKA GeoJSON files
+    ├── Netherlands_shapefile/           # NL administrative boundary
+    ├── tennet_data/                     # TenNet grid congestion data
+    ├── TUD_data/                        # Energy consumption data (TU Delft)
+    ├── warmte_data/                     # Heat source datasets (CSV, NetCDF)
+    └── Warmte_net_data/                 # Heat network data (Excel, Shapefile)
+```
 
-## Data Bronnen
+## Features
 
-| Data | Bron |
-|------|------|
-| RVB Locaties | RVB dataset (punten en polygonen) |
-| MT Warmte | PBL - Download-MT-Warmtebronnen startanalyse (2024) |
-| Datacenter Warmte | RVO - Download-LT DataCentraWarmte |
-| Condens Warmte | RVO - Download-LT CondensWarmte uit Koelprocessen |
-| PDOK Restwarmte | PDOK WFS - service.pdok.nl/rvo/restwarmte |
-| Geothermie | ThermoGIS NetCDF - OVERVIEW_potential_recoverable_heat |
-| Netcongestie | Liander dataset |
+### Map Layers
+- **RVB Buildings** - Government properties with energy consumption analysis
+- **Defensie VKA** - Military facility locations (Bovenregionaal & Locatiespecifiek)
+- **Warmte Net Areas** - Existing heat network coverage polygons
+- **Heat Sources** - MT Warmte, Datacenters, Industrial waste heat, Geothermal
 
-## Gebruik
+### Analytics per Building
+- **Warmte Score (0-100)** - Heat savings potential based on nearby sources (<1km)
+- **Oordeel Verbruik** - Current vs. potential consumption rating (Groen/Oranje/Rood)
+- **Op bestaand warmtenet** - Whether building is within existing heat network (Ja/Nee)
+- **Besparing potential** - Estimated MW savings from local heat utilization
 
-1. Voer het script uit: `python create_comprehensive_map.py`
-2. Open het gegenereerde HTML-bestand: `comprehensive_energy_map.html`
-3. Gebruik het lagenmenu (rechtsboven) om lagen aan/uit te zetten
-4. Klik op RVB-locaties voor gedetailleerde warmte-analyse
+### Dashboard Panels
+- **Top 10 Potentiële Groei** - Buildings with highest heat savings potential
+- **Data Legend** - Visual guide to map markers and colors
 
-## Vereisten
+## Data Sources
 
-- Python 3.x
-- folium
-- geopandas
-- pandas
-- numpy
-- requests
-- netCDF4
+| Dataset | Source | Format |
+|---------|--------|--------|
+| RVB Buildings | Rijksvastgoedbedrijf | Shapefile |
+| Energy Consumption | TU Delft (TUD) | Excel |
+| MT Warmte | PBL Startanalyse 2024 | CSV |
+| Datacenter Warmte | RVO | CSV |
+| Condens Warmte | RVO | CSV |
+| PDOK Restwarmte | PDOK WFS Service | GeoJSON |
+| Geothermal | ThermoGIS | NetCDF |
+| Warmtenetten | CBS Buurtkaart 2020 | Shapefile + Excel |
+| Defensie VKA | Defensie | GeoJSON |
 
-Installeer met: `pip install folium geopandas pandas numpy requests netCDF4`
+## Requirements
+
+- Python 3.8+
+- Dependencies (see requirements.txt):
+  - folium >= 0.14.0
+  - geopandas >= 0.13.0
+  - pandas >= 2.0.0
+  - numpy >= 1.24.0
+  - requests >= 2.28.0
+  - netCDF4 >= 1.6.0
+  - openpyxl >= 3.1.0
+  - shapely >= 2.0.0
+  - matplotlib >= 3.7.0
+
+## Configuration
+
+The script uses relative paths from the project root. Ensure the `data/` directory structure matches the expected layout (see Project Structure above).
+
+Key data files required:
+- `data/Bouwwerken_netcongestie_data/Bouwwerken_netcongestie.shp`
+- `data/TUD_data/TUD_Basislijst_Bekende_aansluitingen_(sept25).xlsx`
+- `data/Warmte_net_data/Download-WarmteNetten-XLS.xlsx`
+- `data/Warmte_net_data/Buurtkaart_2020_v3/*.shp`
+- `data/warmte_data/*.csv`
+- `data/warmte_data/OVERVIEW_potential_recoverable_heat.nc`
+
+## Output
+
+The script generates:
+1. **comprehensive_energy_map.html** - Interactive Folium map with all layers
+2. Console output showing data loading progress and summary statistics
+
+## For Detailed Information
+
+See [MANUAL.md](MANUAL.md) for:
+- Detailed explanation of map layers
+- Score calculation methodology
+- Field definitions and interpretations
+- Data source references
+
+## License
+
+Internal project - contact project maintainers for usage terms.
