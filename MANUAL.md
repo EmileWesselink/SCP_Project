@@ -85,6 +85,39 @@ Een overzichtstabel toont alle warmtebronnen binnen 1 km met:
 - Vermogen/energie capaciteit
 - Afstand tot de RVB-locatie
 
+### Score implementatie
+
+  raw_score = (MT_Warmte_MWth × 1.0) + (Datacenter_Vermogen × 1.0) + (Condens_Warmte_TJ × 0.1) + (Geothermie_Heat ×
+  0.01)
+
+  Components (from nearby heat sources within ~5km):
+  - MT Warmte: Thermal power in MW (weight: 1.0)
+  - Datacenter Vermogen: Datacenter capacity in MW (weight: 1.0)
+  - Condens Warmte: Cooling process waste heat in TJ (weight: 0.1 to convert TJ→MW equivalent)
+  - Geothermie: Only for Defensie locations (weight: 0.01, scaled down)
+
+  Normalized Score (0-100) (line 212)
+
+  normalized = 30 × log₁₀(raw_score + 1) + 10
+
+  This logarithmic scaling means:
+  - 1 MW ≈ 30 points
+  - 10 MW ≈ 60 points
+  - 100 MW ≈ 90 points
+
+| Score | Label     | Meaning                    |
+|------:|-----------|----------------------------|
+| 80+   | Uitstekend | Excellent heat potential   |
+| 60–79 | Goed       | Good potential             |
+| 40–59 | Matig      | Moderate potential         |
+| 20–39 | Beperkt    | Limited potential          |
+| <20   | Minimaal   | Minimal potential          |
+  Besparing (Savings) Calculation (lines 694-698)
+
+  besparing = min(raw_score, totaal_verbruik × 0.5)
+
+  The savings is capped at 50% of the building's total energy consumption.
+
 ## Data Bronnen
 
 | Data | Bron |

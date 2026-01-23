@@ -524,89 +524,92 @@ if datacenter_file in warmte_data:
                     'power_display': f"{vermogen_numeric:.1f} MW ({row.get('RESTW_TEMP', 'N/A')}°C)"
                 })
 
-# Condens Warmte - uses geocoding since file has no X,Y columns
-condens_file = 'Download-LT CondensWarmte uit Koelprocessen-CSV.csv'
-if condens_file in warmte_data:
-    cw_df = warmte_data[condens_file]
-    # This file has 'Plaats' instead of X,Y - need to geocode
-    if 'Plaats' in cw_df.columns:
-        print("  Geocoding Condens Warmte locations (this may take a moment)...")
-        cw_with_plaats = cw_df.dropna(subset=['Plaats'])
-        geocoded_count = 0
-        geocoded_data = []
-
-        # Group by Plaats to reduce API calls
-        unique_places = cw_with_plaats['Plaats'].unique()
-        plaats_coords = {}
-        for plaats in unique_places:
-            x, y = geocode_plaats(plaats, geocode_cache)
-            if x is not None and y is not None:
-                plaats_coords[plaats] = (x, y)
-
-        # Now process all rows with geocoded coordinates - include TJ_MTWarmte for score
-        for idx, row in cw_with_plaats.iterrows():
-            plaats = row['Plaats']
-            if plaats in plaats_coords:
-                x, y = plaats_coords[plaats]
-                # Parse TJ_MTWarmte value
-                tj_mt_val = row.get('TJ_MTWarmte', 0)
-                try:
-                    tj_mt_val = float(tj_mt_val) if pd.notna(tj_mt_val) else 0.0
-                except:
-                    tj_mt_val = 0.0
-
-                geocoded_data.append({
-                    'X': x,
-                    'Y': y,
-                    'Naam': row.get('Naam', 'N/A'),
-                    'Plaats': plaats,
-                    'TJ_CondWarmte': row.get('TJ_CondWarmte', 'N/A'),
-                    'TJ_MTWarmte': tj_mt_val,
-                    'SBINaam': row.get('SBINaam', 'N/A')
-                })
-                geocoded_count += 1
-
-        if geocoded_data:
-            geocoded_df = pd.DataFrame(geocoded_data)
-            gdf_cw = gpd.GeoDataFrame(
-                geocoded_df,
-                geometry=gpd.points_from_xy(geocoded_df['X'], geocoded_df['Y']),
-                crs='EPSG:28992'
-            ).to_crs(epsg=4326)
-            for idx, row in gdf_cw.iterrows():
-                tj_mt_val = row.get('TJ_MTWarmte', 0) or 0
-                all_warmte_sources.append({
-                    'lat': row.geometry.y,
-                    'lon': row.geometry.x,
-                    'type': 'Condens Warmte',
-                    'name': row.get('Naam', 'N/A'),
-                    'gemeente': row.get('Plaats', 'N/A'),
-                    'color': '#32CD32',
-                    'TJ_MTWarmte': tj_mt_val,
-                    'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
-                })
-            print(f"  ✓ Geocoded {geocoded_count} Condens Warmte locations from {len(unique_places)} unique places")
-    elif 'X' in cw_df.columns and 'Y' in cw_df.columns:
-        # Fallback to X,Y if available
-        cw_with_coords = cw_df.dropna(subset=['X', 'Y'])
-        if len(cw_with_coords) > 0:
-            gdf_cw = gpd.GeoDataFrame(cw_with_coords, geometry=gpd.points_from_xy(cw_with_coords['X'], cw_with_coords['Y']), crs='EPSG:28992').to_crs(epsg=4326)
-            for idx, row in gdf_cw.iterrows():
-                tj_mt_val = row.get('TJ_MTWarmte', 0)
-                try:
-                    tj_mt_val = float(tj_mt_val) if pd.notna(tj_mt_val) else 0.0
-                except:
-                    tj_mt_val = 0.0
-                all_warmte_sources.append({
-                    'lat': row.geometry.y,
-                    'lon': row.geometry.x,
-                    'type': 'Condens Warmte',
-                    'name': row.get('BronNaam', 'N/A'),
-                    'gemeente': row.get('Gemeente', 'N/A'),
-                    'color': '#32CD32',
-                    'TJ_MTWarmte': tj_mt_val,
-                    'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
-                })
+# ============ CONDENS WARMTE DATA COLLECTION (COMMENTED OUT) ============
+# To re-enable: uncomment the block below
+# --- START CONDENS WARMTE DATA ---
+# condens_file = 'Download-LT CondensWarmte uit Koelprocessen-CSV.csv'
+# if condens_file in warmte_data:
+#     cw_df = warmte_data[condens_file]
+#     # This file has 'Plaats' instead of X,Y - need to geocode
+#     if 'Plaats' in cw_df.columns:
+#         print("  Geocoding Condens Warmte locations (this may take a moment)...")
+#         cw_with_plaats = cw_df.dropna(subset=['Plaats'])
+#         geocoded_count = 0
+#         geocoded_data = []
+#
+#         # Group by Plaats to reduce API calls
+#         unique_places = cw_with_plaats['Plaats'].unique()
+#         plaats_coords = {}
+#         for plaats in unique_places:
+#             x, y = geocode_plaats(plaats, geocode_cache)
+#             if x is not None and y is not None:
+#                 plaats_coords[plaats] = (x, y)
+#
+#         # Now process all rows with geocoded coordinates - include TJ_MTWarmte for score
+#         for idx, row in cw_with_plaats.iterrows():
+#             plaats = row['Plaats']
+#             if plaats in plaats_coords:
+#                 x, y = plaats_coords[plaats]
+#                 # Parse TJ_MTWarmte value
+#                 tj_mt_val = row.get('TJ_MTWarmte', 0)
+#                 try:
+#                     tj_mt_val = float(tj_mt_val) if pd.notna(tj_mt_val) else 0.0
+#                 except:
+#                     tj_mt_val = 0.0
+#
+#                 geocoded_data.append({
+#                     'X': x,
+#                     'Y': y,
+#                     'Naam': row.get('Naam', 'N/A'),
+#                     'Plaats': plaats,
+#                     'TJ_CondWarmte': row.get('TJ_CondWarmte', 'N/A'),
+#                     'TJ_MTWarmte': tj_mt_val,
+#                     'SBINaam': row.get('SBINaam', 'N/A')
+#                 })
+#                 geocoded_count += 1
+#
+#         if geocoded_data:
+#             geocoded_df = pd.DataFrame(geocoded_data)
+#             gdf_cw = gpd.GeoDataFrame(
+#                 geocoded_df,
+#                 geometry=gpd.points_from_xy(geocoded_df['X'], geocoded_df['Y']),
+#                 crs='EPSG:28992'
+#             ).to_crs(epsg=4326)
+#             for idx, row in gdf_cw.iterrows():
+#                 tj_mt_val = row.get('TJ_MTWarmte', 0) or 0
+#                 all_warmte_sources.append({
+#                     'lat': row.geometry.y,
+#                     'lon': row.geometry.x,
+#                     'type': 'Condens Warmte',
+#                     'name': row.get('Naam', 'N/A'),
+#                     'gemeente': row.get('Plaats', 'N/A'),
+#                     'color': '#32CD32',
+#                     'TJ_MTWarmte': tj_mt_val,
+#                     'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
+#                 })
+#             print(f"  ✓ Geocoded {geocoded_count} Condens Warmte locations from {len(unique_places)} unique places")
+#     elif 'X' in cw_df.columns and 'Y' in cw_df.columns:
+#         # Fallback to X,Y if available
+#         cw_with_coords = cw_df.dropna(subset=['X', 'Y'])
+#         if len(cw_with_coords) > 0:
+#             gdf_cw = gpd.GeoDataFrame(cw_with_coords, geometry=gpd.points_from_xy(cw_with_coords['X'], cw_with_coords['Y']), crs='EPSG:28992').to_crs(epsg=4326)
+#             for idx, row in gdf_cw.iterrows():
+#                 tj_mt_val = row.get('TJ_MTWarmte', 0)
+#                 try:
+#                     tj_mt_val = float(tj_mt_val) if pd.notna(tj_mt_val) else 0.0
+#                 except:
+#                     tj_mt_val = 0.0
+#                 all_warmte_sources.append({
+#                     'lat': row.geometry.y,
+#                     'lon': row.geometry.x,
+#                     'type': 'Condens Warmte',
+#                     'name': row.get('BronNaam', 'N/A'),
+#                     'gemeente': row.get('Gemeente', 'N/A'),
+#                     'color': '#32CD32',
+#                     'TJ_MTWarmte': tj_mt_val,
+#                     'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
+#                 })
+# --- END CONDENS WARMTE DATA ---
 
 # Store geothermie GeoDataFrame for Defensie score calculation
 geothermie_gdf = warmte_data.get("OVERVIEW_potential_recoverable_heat.nc", None)
@@ -1243,116 +1246,119 @@ if datacenter_file in warmte_data:
 
 datacenter_warmte_group.add_to(m)
 
-# ============ CONDENS WARMTE (COOLING PROCESSES) ============
-print("Adding Condens Warmte layer...")
-condens_warmte_group = folium.FeatureGroup(name='❄️ Condens Warmte (Koelprocessen)', show=False)
-
-condens_file = 'Download-LT CondensWarmte uit Koelprocessen-CSV.csv'
-if condens_file in warmte_data:
-    cw_df = warmte_data[condens_file]
-
-    # This file has 'Plaats' instead of X,Y - use geocoding (cache already populated)
-    if 'Plaats' in cw_df.columns:
-        cw_with_plaats = cw_df.dropna(subset=['Plaats'])
-        geocoded_markers = []
-
-        for idx, row in cw_with_plaats.iterrows():
-            plaats = row['Plaats']
-            x, y = geocode_plaats(plaats, geocode_cache)
-            if x is not None and y is not None:
-                geocoded_markers.append({
-                    'X': x,
-                    'Y': y,
-                    'Naam': row.get('Naam', 'N/A'),
-                    'Plaats': plaats,
-                    'TJ_CondWarmte': row.get('TJ_CondWarmte', 'N/A'),
-                    'SBINaam': row.get('SBINaam', 'N/A')
-                })
-
-        if geocoded_markers:
-            geocoded_df = pd.DataFrame(geocoded_markers)
-            gdf_cw = gpd.GeoDataFrame(
-                geocoded_df,
-                geometry=gpd.points_from_xy(geocoded_df['X'], geocoded_df['Y']),
-                crs='EPSG:28992'
-            )
-            gdf_cw = gdf_cw.to_crs(epsg=4326)
-
-            for idx, row in gdf_cw.iterrows():
-                # Format TJ value for display
-                tj_value = row.get('TJ_CondWarmte', 'N/A')
-                if isinstance(tj_value, (int, float)):
-                    tj_display = f"{tj_value:.2f} TJ"
-                else:
-                    tj_display = str(tj_value)
-
-                popup_html = f"""
-                <div style="font-family: Arial; width: 280px;">
-                    <h4 style="color: #32CD32; margin-bottom: 10px; border-bottom: 2px solid #32CD32;">
-                        ❄️ Condens Warmte (Koelprocessen)
-                    </h4>
-                    <table style="width: 100%; font-size: 12px;">
-                        <tr><td><b>Naam:</b></td><td>{row.get('Naam', 'N/A')}</td></tr>
-                        <tr><td><b>Sector:</b></td><td>{row.get('SBINaam', 'N/A')}</td></tr>
-                        <tr><td><b>Plaats:</b></td><td>{row.get('Plaats', 'N/A')}</td></tr>
-                        <tr><td><b>Condens Warmte:</b></td><td>{tj_display}</td></tr>
-                    </table>
-                </div>
-                """
-
-                folium.CircleMarker(
-                    location=[row.geometry.y, row.geometry.x],
-                    radius=6,
-                    popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"Condens: {row.get('Naam', 'N/A')} ({row.get('Plaats', '')})",
-                    color='#228B22',
-                    fillColor='#32CD32',
-                    fillOpacity=0.7,
-                    weight=2
-                ).add_to(condens_warmte_group)
-
-            print(f"  ✓ Added {len(gdf_cw)} condens warmte sources (geocoded)")
-
-    elif 'X' in cw_df.columns and 'Y' in cw_df.columns:
-        # Fallback to X,Y if available
-        cw_with_coords = cw_df.dropna(subset=['X', 'Y'])
-
-        if len(cw_with_coords) > 0:
-            gdf_cw = gpd.GeoDataFrame(
-                cw_with_coords,
-                geometry=gpd.points_from_xy(cw_with_coords['X'], cw_with_coords['Y']),
-                crs='EPSG:28992'
-            )
-            gdf_cw = gdf_cw.to_crs(epsg=4326)
-
-            for idx, row in gdf_cw.iterrows():
-                popup_html = f"""
-                <div style="font-family: Arial; width: 280px;">
-                    <h4 style="color: #32CD32; margin-bottom: 10px; border-bottom: 2px solid #32CD32;">
-                        ❄️ Condens Warmte
-                    </h4>
-                    <table style="width: 100%; font-size: 12px;">
-                        <tr><td><b>Naam:</b></td><td>{row.get('BronNaam', 'N/A')}</td></tr>
-                        <tr><td><b>Type:</b></td><td>{row.get('TypeBron', 'N/A')}</td></tr>
-                        <tr><td><b>Gemeente:</b></td><td>{row.get('Gemeente', 'N/A')}</td></tr>
-                    </table>
-                </div>
-                """
-
-                folium.CircleMarker(
-                    location=[row.geometry.y, row.geometry.x],
-                    radius=6,
-                    popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"Condens: {row.get('BronNaam', 'N/A')}",
-                    color='#228B22',
-                    fillColor='#32CD32',
-                    fillOpacity=0.7,
-                    weight=2
-                ).add_to(condens_warmte_group)
-
-            print(f"  ✓ Added {len(gdf_cw)} condens warmte sources")
-
-condens_warmte_group.add_to(m)
+# ============ CONDENS WARMTE LAYER (COMMENTED OUT) ============
+# To re-enable: uncomment the block below
+# --- START CONDENS WARMTE LAYER ---
+# print("Adding Condens Warmte layer...")
+# condens_warmte_group = folium.FeatureGroup(name='❄️ Condens Warmte (Koelprocessen)', show=False)
+#
+# condens_file = 'Download-LT CondensWarmte uit Koelprocessen-CSV.csv'
+# if condens_file in warmte_data:
+#     cw_df = warmte_data[condens_file]
+#
+#     # This file has 'Plaats' instead of X,Y - use geocoding (cache already populated)
+#     if 'Plaats' in cw_df.columns:
+#         cw_with_plaats = cw_df.dropna(subset=['Plaats'])
+#         geocoded_markers = []
+#
+#         for idx, row in cw_with_plaats.iterrows():
+#             plaats = row['Plaats']
+#             x, y = geocode_plaats(plaats, geocode_cache)
+#             if x is not None and y is not None:
+#                 geocoded_markers.append({
+#                     'X': x,
+#                     'Y': y,
+#                     'Naam': row.get('Naam', 'N/A'),
+#                     'Plaats': plaats,
+#                     'TJ_CondWarmte': row.get('TJ_CondWarmte', 'N/A'),
+#                     'SBINaam': row.get('SBINaam', 'N/A')
+#                 })
+#
+#         if geocoded_markers:
+#             geocoded_df = pd.DataFrame(geocoded_markers)
+#             gdf_cw = gpd.GeoDataFrame(
+#                 geocoded_df,
+#                 geometry=gpd.points_from_xy(geocoded_df['X'], geocoded_df['Y']),
+#                 crs='EPSG:28992'
+#             )
+#             gdf_cw = gdf_cw.to_crs(epsg=4326)
+#
+#             for idx, row in gdf_cw.iterrows():
+#                 # Format TJ value for display
+#                 tj_value = row.get('TJ_CondWarmte', 'N/A')
+#                 if isinstance(tj_value, (int, float)):
+#                     tj_display = f"{tj_value:.2f} TJ"
+#                 else:
+#                     tj_display = str(tj_value)
+#
+#                 popup_html = f"""
+#                 <div style="font-family: Arial; width: 280px;">
+#                     <h4 style="color: #32CD32; margin-bottom: 10px; border-bottom: 2px solid #32CD32;">
+#                         ❄️ Condens Warmte (Koelprocessen)
+#                     </h4>
+#                     <table style="width: 100%; font-size: 12px;">
+#                         <tr><td><b>Naam:</b></td><td>{row.get('Naam', 'N/A')}</td></tr>
+#                         <tr><td><b>Sector:</b></td><td>{row.get('SBINaam', 'N/A')}</td></tr>
+#                         <tr><td><b>Plaats:</b></td><td>{row.get('Plaats', 'N/A')}</td></tr>
+#                         <tr><td><b>Condens Warmte:</b></td><td>{tj_display}</td></tr>
+#                     </table>
+#                 </div>
+#                 """
+#
+#                 folium.CircleMarker(
+#                     location=[row.geometry.y, row.geometry.x],
+#                     radius=6,
+#                     popup=folium.Popup(popup_html, max_width=300),
+#                     tooltip=f"Condens: {row.get('Naam', 'N/A')} ({row.get('Plaats', '')})",
+#                     color='#228B22',
+#                     fillColor='#32CD32',
+#                     fillOpacity=0.7,
+#                     weight=2
+#                 ).add_to(condens_warmte_group)
+#
+#             print(f"  ✓ Added {len(gdf_cw)} condens warmte sources (geocoded)")
+#
+#     elif 'X' in cw_df.columns and 'Y' in cw_df.columns:
+#         # Fallback to X,Y if available
+#         cw_with_coords = cw_df.dropna(subset=['X', 'Y'])
+#
+#         if len(cw_with_coords) > 0:
+#             gdf_cw = gpd.GeoDataFrame(
+#                 cw_with_coords,
+#                 geometry=gpd.points_from_xy(cw_with_coords['X'], cw_with_coords['Y']),
+#                 crs='EPSG:28992'
+#             )
+#             gdf_cw = gdf_cw.to_crs(epsg=4326)
+#
+#             for idx, row in gdf_cw.iterrows():
+#                 popup_html = f"""
+#                 <div style="font-family: Arial; width: 280px;">
+#                     <h4 style="color: #32CD32; margin-bottom: 10px; border-bottom: 2px solid #32CD32;">
+#                         ❄️ Condens Warmte
+#                     </h4>
+#                     <table style="width: 100%; font-size: 12px;">
+#                         <tr><td><b>Naam:</b></td><td>{row.get('BronNaam', 'N/A')}</td></tr>
+#                         <tr><td><b>Type:</b></td><td>{row.get('TypeBron', 'N/A')}</td></tr>
+#                         <tr><td><b>Gemeente:</b></td><td>{row.get('Gemeente', 'N/A')}</td></tr>
+#                     </table>
+#                 </div>
+#                 """
+#
+#                 folium.CircleMarker(
+#                     location=[row.geometry.y, row.geometry.x],
+#                     radius=6,
+#                     popup=folium.Popup(popup_html, max_width=300),
+#                     tooltip=f"Condens: {row.get('BronNaam', 'N/A')}",
+#                     color='#228B22',
+#                     fillColor='#32CD32',
+#                     fillOpacity=0.7,
+#                     weight=2
+#                 ).add_to(condens_warmte_group)
+#
+#             print(f"  ✓ Added {len(gdf_cw)} condens warmte sources")
+#
+# condens_warmte_group.add_to(m)
+# --- END CONDENS WARMTE LAYER ---
 
 # ============ Geothermie LAYERS ============
 print("Adding Geothermie layers...")
@@ -1517,11 +1523,6 @@ legend_html = '''
             <span style="display: inline-block; width: 12px; height: 12px; background: #9370DB;
                          margin-right: 10px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
             <span style="color: rgba(255,255,255,0.85); font-size: 11px;">Datacenter Warmte</span>
-        </div>
-        <div style="margin: 5px 0; display: flex; align-items: center;">
-            <span style="display: inline-block; width: 12px; height: 12px; background: #32CD32;
-                         margin-right: 10px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
-            <span style="color: rgba(255,255,255,0.85); font-size: 11px;">Condens Warmte</span>
         </div>
         <div style="margin: 5px 0; display: flex; align-items: center;">
             <span style="display: inline-block; width: 12px; height: 12px; background: linear-gradient(135deg, yellow, orange, red);
