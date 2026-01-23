@@ -141,7 +141,6 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
     Components (all within 1km):
     - MT Warmte: MWth (thermal power in MW)
     - Datacenter: VERMOGEN where RESTW_TEMP > 60°C
-    - PDOK Restwarmte: tjWarmte (TJ of industrial residual heat)
     - Condens Warmte: TJ_MTWarmte (TJ of MT heat via heat pump)
     - Geothermie: heat value at location (only for Defensie)
 
@@ -150,7 +149,6 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
     score_breakdown = {
         'mt_warmte_mwth': 0.0,
         'datacenter_vermogen': 0.0,
-        'pdok_restwarmte_tj': 0.0,
         'condens_tj_mt': 0.0,
         'geothermie_heat': 0.0
     }
@@ -165,8 +163,6 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
                 temp = source.get('RESTW_TEMP_numeric', 0) or 0
                 if temp > 60:
                     score_breakdown['datacenter_vermogen'] += source.get('VERMOGEN_numeric', 0) or 0
-            elif source['type'] == 'PDOK Restwarmte':
-                score_breakdown['pdok_restwarmte_tj'] += source.get('tjWarmte', 0) or 0
             elif source['type'] == 'Condens Warmte':
                 score_breakdown['condens_tj_mt'] += source.get('TJ_MTWarmte', 0) or 0
 
@@ -189,7 +185,6 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
     raw_score = (
         score_breakdown['mt_warmte_mwth'] * 1.0 +  # MW thermal
         score_breakdown['datacenter_vermogen'] * 1.0 +  # MW
-        score_breakdown['pdok_restwarmte_tj'] * 0.1 +  # TJ -> approximate MW equivalent
         score_breakdown['condens_tj_mt'] * 0.1 +  # TJ -> approximate MW equivalent
         score_breakdown['geothermie_heat'] * 0.01  # Scale down geothermie
     )
@@ -389,19 +384,6 @@ for filepath in warmte_files:
     except Exception as e:
         print(f"  ○ {filename}: Could not load - {str(e)[:50]}")
 
-# --- Load PDOK Restwarmte via WFS ---
-print("  Loading PDOK Restwarmte from WFS...")
-try:
-    # Note: URL redirects from /rvo/restwarmte/ to /rvo/potentiekaart-restwarmte/
-    pdok_wfs_url = "https://service.pdok.nl/rvo/potentiekaart-restwarmte/wfs/v1_0?service=WFS&version=2.0.0&request=GetFeature&typeName=restwarmte:liggingindustrieco2&outputFormat=application/json"
-    gdf_restwarmte = gpd.read_file(pdok_wfs_url)
-    # Convert from EPSG:28992 (RD New) to WGS84
-    if gdf_restwarmte.crs and gdf_restwarmte.crs != "EPSG:4326":
-        gdf_restwarmte = gdf_restwarmte.to_crs(epsg=4326)
-    warmte_data['PDOK_Restwarmte_WFS'] = gdf_restwarmte
-    print(f"  ✓ PDOK Restwarmte (WFS): {len(gdf_restwarmte)} records")
-except Exception as e:
-    print(f"  ○ PDOK Restwarmte (WFS): Could not load - {str(e)[:80]}")
 
 
 # ============ 5. LOAD NETHERLANDS BOUNDARY ============
@@ -459,9 +441,9 @@ print(f"  RVB buildings on existing warmte net: {warmtenet_count} / {len(rvb_poi
 # ============ CREATE BASE MAP ============
 m = folium.Map(
     location=[center_lat, center_lon],
-    zoom_start=6,
+    zoom_start=5,
     tiles=None,
-    control_scale=True,
+    control_scale=False,
     prefer_canvas=True
 )
 
@@ -625,39 +607,6 @@ if condens_file in warmte_data:
                     'TJ_MTWarmte': tj_mt_val,
                     'power_display': f"{tj_mt_val:.2f} TJ" if tj_mt_val > 0 else "N/A"
                 })
-
-# PDOK Restwarmte - loaded via WFS with tjWarmte field
-if 'PDOK_Restwarmte_WFS' in warmte_data:
-    gdf_pdok = warmte_data['PDOK_Restwarmte_WFS']
-    print(f"  Processing {len(gdf_pdok)} PDOK Restwarmte records...")
-    for idx, row in gdf_pdok.iterrows():
-        try:
-            # Get coordinates from geometry
-            geom = row.geometry
-            if geom is not None:
-                lon = geom.x if hasattr(geom, 'x') else geom.centroid.x
-                lat = geom.y if hasattr(geom, 'y') else geom.centroid.y
-
-                # Parse tjWarmte value (heat in TJ)
-                tj_warmte_val = row.get('tjWarmte', 0)
-                try:
-                    tj_warmte_val = float(tj_warmte_val) if pd.notna(tj_warmte_val) else 0.0
-                except:
-                    tj_warmte_val = 0.0
-
-                all_warmte_sources.append({
-                    'lat': lat,
-                    'lon': lon,
-                    'type': 'PDOK Restwarmte',
-                    'name': row.get('bedrijf', 'N/A'),
-                    'gemeente': 'N/A',
-                    'color': '#FF6B6B',  # Distinct coral/red color
-                    'tjWarmte': tj_warmte_val,
-                    'power_display': f"{tj_warmte_val:.2f} TJ" if tj_warmte_val > 0 else "N/A"
-                })
-        except Exception as e:
-            continue  # Skip records with geometry issues
-    print(f"  ✓ Added PDOK Restwarmte to warmte sources")
 
 # Store geothermie GeoDataFrame for Defensie score calculation
 geothermie_gdf = warmte_data.get("OVERVIEW_potential_recoverable_heat.nc", None)
@@ -824,7 +773,6 @@ for idx, row in rvb_points.iterrows():
         <table style="width: 100%; margin-top: 4px;">
             <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
             <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
-            <tr><td>🏭 PDOK Restwarmte:</td><td style="text-align: right;"><b>{score_breakdown['pdok_restwarmte_tj']:.1f} TJ</b></td></tr>
             <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
         </table>
         <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
@@ -944,9 +892,19 @@ rvb_group.add_to(m)
 # ============ CALCULATE TOP 10 POTENTIËLE GROEI ============
 print("Calculating Top 10 potentiële groei...")
 
-# Sort by besparing potential (highest first) - only include buildings with potential > 0
+# Color improvement score: prioritize buildings with biggest color change (e.g., Rood → Groen)
+def color_improvement_score(item):
+    """Calculate score based on color change. Higher = better improvement."""
+    color_rank = {'Rood': 0, 'Oranje': 1, 'Groen': 2, 'Onbekend': -1}
+    base = color_rank.get(item['oordeel_base'], -1)
+    adjusted = color_rank.get(item['adjusted_oordeel'], -1)
+    if base == -1 or adjusted == -1:
+        return 0  # Unknown stays low priority
+    return adjusted - base  # Rood(0)→Groen(2) = 2, Rood(0)→Oranje(1) = 1, etc.
+
+# Sort by color improvement first (highest first), then by besparing_mw as tiebreaker
 top10_candidates = [r for r in rvb_scores_for_top10 if r['besparing_mw'] > 0]
-top10_candidates.sort(key=lambda x: x['besparing_mw'], reverse=True)
+top10_candidates.sort(key=lambda x: (color_improvement_score(x), x['besparing_mw']), reverse=True)
 top10_groei = top10_candidates[:10]
 
 # Build the Top 10 table HTML rows - need map variable name for flyTo
@@ -1025,8 +983,7 @@ for geojson_file in bovenregionaal_files:
                 <table style="width: 100%; margin-top: 4px;">
                     <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
                     <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
-                    <tr><td>🏭 PDOK Restwarmte:</td><td style="text-align: right;"><b>{score_breakdown['pdok_restwarmte_tj']:.1f} TJ</b></td></tr>
-                    <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
+                            <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
                     <tr style="color: #FF8C00;"><td>🌋 Geothermie:</td><td style="text-align: right;"><b>{score_breakdown['geothermie_heat']:.2f}</b></td></tr>
                 </table>
                 <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
@@ -1135,8 +1092,7 @@ for geojson_file in locatiespecifiek_files:
                 <table style="width: 100%; margin-top: 4px;">
                     <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
                     <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
-                    <tr><td>🏭 PDOK Restwarmte:</td><td style="text-align: right;"><b>{score_breakdown['pdok_restwarmte_tj']:.1f} TJ</b></td></tr>
-                    <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
+                            <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
                     <tr style="color: #FF8C00;"><td>🌋 Geothermie:</td><td style="text-align: right;"><b>{score_breakdown['geothermie_heat']:.2f}</b></td></tr>
                 </table>
                 <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
@@ -1287,52 +1243,6 @@ if datacenter_file in warmte_data:
 
 datacenter_warmte_group.add_to(m)
 
-# ============ AARDWARMTE (GEOTHERMAL) ============
-print("Adding Aardwarmte layer...")
-aardwarmte_group = folium.FeatureGroup(name='🌋 Aardwarmte P50', show=False)
-
-aardwarmte_file = 'Download-AardwarmteP50Vermogen-CSV.csv'
-if aardwarmte_file in warmte_data:
-    aw_df = warmte_data[aardwarmte_file]
-
-    if 'X' in aw_df.columns and 'Y' in aw_df.columns:
-        aw_with_coords = aw_df.dropna(subset=['X', 'Y'])
-
-        if len(aw_with_coords) > 0:
-            gdf_aw = gpd.GeoDataFrame(
-                aw_with_coords,
-                geometry=gpd.points_from_xy(aw_with_coords['X'], aw_with_coords['Y']),
-                crs='EPSG:28992'
-            )
-            gdf_aw = gdf_aw.to_crs(epsg=4326)
-
-            for idx, row in gdf_aw.iterrows():
-                popup_html = f"""
-                <div style="font-family: Arial; width: 280px;">
-                    <h4 style="color: #FF8C00; margin-bottom: 10px; border-bottom: 2px solid #FF8C00;">
-                        🌋 Aardwarmte P50
-                    </h4>
-                    <table style="width: 100%; font-size: 12px;">
-                        <tr><td><b>Locatie:</b></td><td>{row.get('BronNaam', 'N/A')}</td></tr>
-                    </table>
-                </div>
-                """
-
-                folium.CircleMarker(
-                    location=[row.geometry.y, row.geometry.x],
-                    radius=7,
-                    popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"Aardwarmte: {row.get('BronNaam', 'N/A')}",
-                    color='#8B4513',
-                    fillColor='#FF8C00',
-                    fillOpacity=0.7,
-                    weight=2
-                ).add_to(aardwarmte_group)
-
-            print(f"  ✓ Added {len(gdf_aw)} aardwarmte sources")
-
-aardwarmte_group.add_to(m)
-
 # ============ CONDENS WARMTE (COOLING PROCESSES) ============
 print("Adding Condens Warmte layer...")
 condens_warmte_group = folium.FeatureGroup(name='❄️ Condens Warmte (Koelprocessen)', show=False)
@@ -1444,56 +1354,6 @@ if condens_file in warmte_data:
 
 condens_warmte_group.add_to(m)
 
-# ============ PDOK RESTWARMTE (Industrial Residual Heat) ============
-print("Adding PDOK Restwarmte layer...")
-pdok_restwarmte_group = folium.FeatureGroup(name='🏭 PDOK Restwarmte (Industrie)', show=False)
-
-if 'PDOK_Restwarmte_WFS' in warmte_data:
-    gdf_pdok = warmte_data['PDOK_Restwarmte_WFS']
-
-    for idx, row in gdf_pdok.iterrows():
-        try:
-            geom = row.geometry
-            if geom is not None:
-                lon = geom.x if hasattr(geom, 'x') else geom.centroid.x
-                lat = geom.y if hasattr(geom, 'y') else geom.centroid.y
-
-                # Parse tjWarmte value
-                tj_warmte = row.get('tjWarmte', 0)
-                try:
-                    tj_display = f"{float(tj_warmte):.2f} TJ" if pd.notna(tj_warmte) else "N/A"
-                except:
-                    tj_display = str(tj_warmte)
-
-                popup_html = f"""
-                <div style="font-family: Arial; width: 280px;">
-                    <h4 style="color: #FF6B6B; margin-bottom: 10px; border-bottom: 2px solid #FF6B6B;">
-                        🏭 PDOK Restwarmte (Industrie)
-                    </h4>
-                    <table style="width: 100%; font-size: 12px;">
-                        <tr><td><b>Bedrijf:</b></td><td>{row.get('bedrijf', 'N/A')}</td></tr>
-                        <tr><td><b>Warmte:</b></td><td>{tj_display}</td></tr>
-                    </table>
-                </div>
-                """
-
-                folium.CircleMarker(
-                    location=[lat, lon],
-                    radius=7,
-                    popup=folium.Popup(popup_html, max_width=300),
-                    tooltip=f"Restwarmte: {row.get('bedrijf', 'N/A')} ({tj_display})",
-                    color='#CD5C5C',
-                    fillColor='#FF6B6B',
-                    fillOpacity=0.7,
-                    weight=2
-                ).add_to(pdok_restwarmte_group)
-        except Exception as e:
-            continue
-
-    print(f"  ✓ Added {len(gdf_pdok)} PDOK restwarmte sources")
-
-pdok_restwarmte_group.add_to(m)
-
 # ============ Geothermie LAYERS ============
 print("Adding Geothermie layers...")
 thermogis_group = folium.FeatureGroup(name='🌍 ThermoGIS Geothermie', show=False)
@@ -1538,48 +1398,6 @@ if nc_key in warmte_data:
             print(f"  ✓ Added NetCDF warmte grid to map ({len(heat_points)} high-value cells, threshold: {threshold:.2f})")
 
 thermogis_group.add_to(m)
-
-######### Rest Warmte
-
-restwarmte_group = folium.FeatureGroup(name='🏭 PDOK Restwarmte', show=False)
-try:
-    pdok_url = 'https://service.pdok.nl/rvo/restwarmte/wms/v1_0'
-    folium.raster_layers.WmsTileLayer(
-        url=pdok_url,
-        layers='liggingindustrieco2',
-        transparent=True,
-        format='image/png',
-        opacity=0.6,
-        name='PDOK Restwarmte',
-        overlay=True,
-        control=True,
-        attr='PDOK - RVO WarmteAtlas'
-    ).add_to(restwarmte_group)
-    print("  ✓ PDOK Restwarmte WMS added")
-except Exception as e:
-    print(f"  ○ PDOK WMS error: {e}")
-restwarmte_group.add_to(m)
-
-# ============ HEAT MAP ============
-print("Adding heat map layer...")
-heatmap_group = folium.FeatureGroup(name='🔥 Heat Map', show=False)
-heat_data = [[point.y, point.x, area] for point, area in zip(rvb_points.geometry, rvb_points["energy_proxy"])]
-
-HeatMap(
-    heat_data,
-    min_opacity=0.3,
-    max_opacity=0.8,
-    radius=25,
-    blur=20,
-    gradient={
-        0.0: 'blue',
-        0.3: 'lime',
-        0.5: 'yellow',
-        0.7: 'orange',
-        1.0: 'red'
-    }
-).add_to(heatmap_group)
-heatmap_group.add_to(m)
 
 #============= WarmteNet LAYER ============
 
@@ -1688,7 +1506,7 @@ legend_html = '''
         <div style="color: rgba(255,255,255,0.6); font-size: 10px; margin-left: 26px;">Click for source analytics</div>
     </div>
 
-    <div style="background: rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+    <div style="background: rgba(255,255,255,0.08); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
         <div style="color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600; margin-bottom: 8px;">Heat Sources</div>
         <div style="margin: 5px 0; display: flex; align-items: center;">
             <span style="display: inline-block; width: 12px; height: 12px; background: #1E90FF;
@@ -1701,20 +1519,29 @@ legend_html = '''
             <span style="color: rgba(255,255,255,0.85); font-size: 11px;">Datacenter Warmte</span>
         </div>
         <div style="margin: 5px 0; display: flex; align-items: center;">
-            <span style="display: inline-block; width: 12px; height: 12px; background: #FF8C00;
-                         margin-right: 10px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
-            <span style="color: rgba(255,255,255,0.85); font-size: 11px;">Aardwarmte P50</span>
-        </div>
-        <div style="margin: 5px 0; display: flex; align-items: center;">
             <span style="display: inline-block; width: 12px; height: 12px; background: #32CD32;
                          margin-right: 10px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
             <span style="color: rgba(255,255,255,0.85); font-size: 11px;">Condens Warmte</span>
+        </div>
+        <div style="margin: 5px 0; display: flex; align-items: center;">
+            <span style="display: inline-block; width: 12px; height: 12px; background: linear-gradient(135deg, yellow, orange, red);
+                         margin-right: 10px; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
+            <span style="color: rgba(255,255,255,0.85); font-size: 11px;">ThermoGIS Geothermie</span>
+        </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.08); padding: 10px; border-radius: 8px;">
+        <div style="color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600; margin-bottom: 8px;">Areas</div>
+        <div style="margin: 5px 0; display: flex; align-items: center;">
+            <span style="display: inline-block; width: 12px; height: 12px; background: #FF00C3;
+                         margin-right: 10px; border: 1px solid #FF227A; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
+            <span style="color: rgba(255,255,255,0.85); font-size: 11px;">Warmte Net Areas</span>
         </div>
     </div>
 
     <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.15);
                 color: rgba(255,255,255,0.5); font-size: 10px; text-align: center;">
-        Data Sources: RVB • Defensie • TenNet • Warmteatlas • ThermoGIS • PDOK
+        Data Sources: RVB • Defensie • TenNet • Warmteatlas • ThermoGIS
     </div>
 </div>
 '''
@@ -1728,7 +1555,7 @@ top10_html = f'''
         background: rgba(255,255,255,0.1) !important;
     }}
 </style>
-<div id="top10-panel" style="position: fixed; top: 80px; left: 10px; width: 400px;
+<div id="top10-panel" style="position: fixed; top: 10px; left: 10px; width: 400px;
             background: linear-gradient(135deg, rgba(30,60,114,0.95) 0%, rgba(42,82,152,0.95) 100%);
             border-radius: 12px; z-index: 9998;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -1796,8 +1623,7 @@ print(f"  ✓ Defensie VKA Locatiespecifiek ({len(locatiespecifiek_files)} areas
 print(f"  ✓ TenNet Congestie (data loaded)")
 print(f"  ✓ Warmte Bronnen (MT)")
 print(f"  ✓ ThermoGIS Geothermie (WMS)")
-print(f"  ✓ PDOK Restwarmte (WMS)")
-print(f"  ✓ Heat Map")
+print(f"  ✓ Warmte Net Areas")
 print("=" * 80)
 
 # Open in browser
