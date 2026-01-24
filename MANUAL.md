@@ -1,150 +1,212 @@
-# SCP Project - RVB Warmtepotentie Kaart
+# Handleiding - RVB Warmtepotentie Kaart
 
-Een interactieve kaart die het warmte-besparingspotentieel van RVB (Rijksvastgoedbedrijf) locaties visualiseert op basis van nabijgelegen warmtebronnen.
+## Wat is deze kaart?
 
-## Overzicht
+Deze interactieve kaart laat zien welke overheidsgebouwen (RVB-panden) het meeste kunnen besparen door gebruik te maken van warmtebronnen in de buurt. Denk aan restwarmte van datacenters, industriele processen of aardwarmte.
 
-Deze kaart combineert gegevens van RVB-locaties met diverse warmtebronnen om te analyseren hoe gebouwen kunnen bijdragen aan de vermindering van netcongestie door gebruik te maken van lokale warmtebronnen.
+De kaart helpt bij het beantwoorden van de vraag: **"Welke gebouwen kunnen bijdragen aan het verminderen van netcongestie door lokale warmtebronnen te gebruiken?"**
 
-## Kaartlagen
+---
 
-De kaart bevat de volgende lagen (in/uit te schakelen via het lagenmenu):
+## Hoe gebruik je de kaart?
 
-### Basislagen
-- **Light Map** - Lichte achtergrondkaart (standaard)
-- **Street Map** - OpenStreetMap stijl
-- **Dark Map** - Donkere achtergrondkaart
-- **Netherlands Boundary** - Landsgrens Nederland
+### De kaart openen
 
-### RVB Locaties
-- **RVB Buildings** - Alle RVB-panden (driehoek markers)
-- **Defensie Locaties** - Defensie-specifieke locaties (oranje markers)
+1. Open het bestand `comprehensive_energy_map.html` in uw webbrowser
+2. De kaart laadt automatisch met alle beschikbare lagen
 
-### Warmtebronnen
-- **Warmte Bronnen (MT)** - Midden-temperatuur warmtebronnen uit de PBL startanalyse
-- **Datacenter Warmte** - Restwarmte van datacenters
-- **PDOK Restwarmte (Industrie)** - Industriele restwarmte via PDOK WFS
-- **Condens Warmte (Koelprocessen)** - Condenswarmte uit koelprocessen
-- **ThermoGIS Geothermie** - Aardwarmte potentie (heatmap)
+### Navigeren
 
-### Analyse
-- **Netcongestie Gebieden** - Gebieden met netcongestie (rood/oranje)
+- **Inzoomen**: Scroll met uw muiswiel of gebruik de + knop linksboven
+- **Uitzoomen**: Scroll terug of gebruik de - knop
+- **Verplaatsen**: Klik en sleep de kaart
 
-## Popup Informatie
+### Lagen aan/uit zetten
 
-Klik op een RVB-locatie om gedetailleerde informatie te zien:
+Rechtsboven in de kaart vindt u het **lagenmenu** (pictogram met gestapelde vierkantjes). Hier kunt u:
+- Verschillende kaartlagen aan- of uitzetten door het vakje aan te vinken
+- De achtergrondkaart wijzigen (licht, donker of stratenkaart)
 
-### Basisinformatie
-- Objectnaam en adres
-- Eigenaar en bouwwerkfunctie
-- Contractcapaciteit en maximaal verbruik
+---
 
-### Warmte Score ("Mogelijke Besparing Warmte Opwek")
+## Wat betekenen de symbolen?
 
-De score geeft aan hoeveel warmte-besparingspotentie een locatie heeft op basis van nabijgelegen warmtebronnen (< 1 km). De score bestaat uit:
+### RVB Gebouwen (driehoekjes)
 
-| Component | Bron | Eenheid |
-|-----------|------|---------|
-| MT Warmte | PBL Startanalyse | MW thermisch |
-| Datacenter (>60°C) | Datacenters met temperatuur > 60°C | MW |
-| PDOK Restwarmte | Industriele restwarmte (PDOK) | TJ |
-| Condens Warmte | Koelprocessen | TJ |
-| Geothermie | ThermoGIS (alleen Defensie) | - |
+Elk driehoekje op de kaart is een RVB-gebouw. De kleur geeft aan hoe goed de locatie scoort voor warmtepotentie:
 
-De ruwe score wordt omgezet naar een genormaliseerde schaal (0-100):
-- **0-20**: Zeer Laag - nauwelijks warmtebronnen beschikbaar
-- **20-40**: Laag - beperkte warmtebronnen
-- **40-60**: Gemiddeld - redelijke warmtepotentie
-- **60-80**: Hoog - goede warmtepotentie
-- **80-100**: Zeer Hoog - uitstekende warmtepotentie
+| Kleur | Betekenis |
+|-------|-----------|
+| 🟢 Groen | Uitstekend - Veel warmtebronnen in de buurt |
+| 🔵 Blauw | Goed - Goede warmtepotentie |
+| 🟡 Geel | Matig - Redelijke warmtepotentie |
+| 🟠 Oranje | Beperkt - Weinig warmtebronnen |
+| 🔴 Rood | Minimaal - Nauwelijks warmtebronnen beschikbaar |
+
+### Warmtebronnen (cirkels)
+
+Op de kaart ziet u ook verschillende warmtebronnen als gekleurde cirkels:
+
+| Symbool | Type | Wat is het? |
+|---------|------|-------------|
+| 🔴 Rode cirkel | MT Warmte | Midden-temperatuur warmtebronnen (industrie) |
+| 💻 Blauwe cirkel | Datacenter | Restwarmte van datacenters |
+| 🌋 Oranje vlak | Geothermie | Aardwarmte potentie (heatmap) |
+
+### Defensie locaties (speciale markers)
+
+Defensie-locaties worden apart weergegeven met:
+- **Paarse markers**: Bovenregionale defensielocaties
+- **Oranje markers**: Locatiespecifieke defensie-faciliteiten
+
+---
+
+## Gebouwinformatie bekijken
+
+Klik op een gebouw (driehoekje) om een popup te openen met gedetailleerde informatie:
+
+### Basisgegevens
+
+- **Objectnaam**: Naam van het gebouw
+- **Adres**: Locatie van het gebouw
+- **Eigenaar**: Wie het gebouw bezit
+- **Bouwwerkfunctie**: Waar het gebouw voor wordt gebruikt
+
+### Warmte Score
+
+De warmtescore is een getal van 0 tot 100 dat aangeeft hoeveel warmte-besparingspotentieel het gebouw heeft:
+
+| Score | Beoordeling | Wat betekent dit? |
+|------:|-------------|-------------------|
+| 80-100 | Uitstekend | Veel warmtebronnen dichtbij, groot besparingspotentieel |
+| 60-79 | Goed | Goede mogelijkheden voor warmtebenutting |
+| 40-59 | Matig | Redelijke mogelijkheden |
+| 20-39 | Beperkt | Weinig warmtebronnen beschikbaar |
+| 0-19 | Minimaal | Nauwelijks warmtebronnen in de buurt |
 
 ### Verbruik Oordeel
 
-Het oordeel wordt bepaald door de verhouding tussen maximaal verbruik en contractcapaciteit:
-- **Groen**: ≤ 80% van contractcapaciteit benut
-- **Oranje**: 80-100% van contractcapaciteit benut
-- **Rood**: > 100% van contractcapaciteit benut
-- **Onbekend**: Geen verbruiksgegevens beschikbaar
+Het oordeel geeft aan hoe het huidige energieverbruik zich verhoudt tot de contractcapaciteit:
 
-### Nieuw Totaal Verbruik
+| Kleur | Betekenis |
+|-------|-----------|
+| 🟢 Groen | Goed - Minder dan 80% van capaciteit gebruikt |
+| 🟠 Oranje | Waarschuwing - 80-100% van capaciteit gebruikt |
+| 🔴 Rood | Kritiek - Meer dan 100% van capaciteit (overschrijding) |
 
-Laat zien hoe het verbruik zou verbeteren met warmtebesparing:
-```
-Nieuw Totaal Verbruik = Totaal Verbruik - Besparing Warmte Opwek
-```
+### Warmtenet Status
 
-De popup toont twee oordeel-kleuren:
-- **HUIDIG**: Het huidige verbruiksoordeel
-- **MET WARMTE**: Het oordeel na toepassing van warmtebesparing
+Bij elk gebouw ziet u of het op een bestaand warmtenet is aangesloten:
+- **Ja**: Het gebouw ligt binnen een warmtenetgebied
+- **Nee**: Het gebouw ligt buiten bestaande warmtenetten
 
 ### Nabijgelegen Warmtebronnen
 
-Een overzichtstabel toont alle warmtebronnen binnen 1 km met:
+Onderaan de popup vindt u een tabel met alle warmtebronnen binnen 1 kilometer, inclusief:
 - Type warmtebron
-- Naam van de bron
-- Vermogen/energie capaciteit
-- Afstand tot de RVB-locatie
+- Naam
+- Vermogen of energie
+- Afstand tot het gebouw
 
-### Score implementatie
+---
 
-  raw_score = (MT_Warmte_MWth × 1.0) + (Datacenter_Vermogen × 1.0) + (Condens_Warmte_TJ × 0.1) + (Geothermie_Heat ×
-  0.01)
+## De Score Uitgelegd
 
-  Components (from nearby heat sources within ~5km):
-  - MT Warmte: Thermal power in MW (weight: 1.0)
-  - Datacenter Vermogen: Datacenter capacity in MW (weight: 1.0)
-  - Condens Warmte: Cooling process waste heat in TJ (weight: 0.1 to convert TJ→MW equivalent)
-  - Geothermie: Only for Defensie locations (weight: 0.01, scaled down)
+De warmtescore wordt berekend op basis van warmtebronnen binnen 1 kilometer van het gebouw:
 
-  Normalized Score (0-100) (line 212)
+### Componenten
 
-  normalized = 30 × log₁₀(raw_score + 1) + 10
+| Component | Wat is het? | Eenheid |
+|-----------|-------------|---------|
+| MT Warmte | Midden-temperatuur industriele warmte | MW (megawatt) |
+| Datacenter | Restwarmte van datacenters (alleen >60°C) | MW |
+| Geothermie | Aardwarmte potentie (alleen voor Defensie) | - |
 
-  This logarithmic scaling means:
-  - 1 MW ≈ 30 points
-  - 10 MW ≈ 60 points
-  - 100 MW ≈ 90 points
+### Hoe werkt de berekening?
 
-| Score | Label     | Meaning                    |
-|------:|-----------|----------------------------|
-| 80+   | Uitstekend | Excellent heat potential   |
-| 60–79 | Goed       | Good potential             |
-| 40–59 | Matig      | Moderate potential         |
-| 20–39 | Beperkt    | Limited potential          |
-| <20   | Minimaal   | Minimal potential          |
-  Besparing (Savings) Calculation (lines 694-698)
+1. **Ruwe score**: Alle warmtebronnen binnen 1 km worden opgeteld
+2. **Normalisatie**: De ruwe score wordt omgezet naar een schaal van 0-100
+3. **Logaritmische schaal**: Dit zorgt ervoor dat zowel kleine als grote hoeveelheden warmte goed worden weergegeven
 
-  besparing = min(raw_score, totaal_verbruik × 0.5)
+### Besparing
 
-  The savings is capped at 50% of the building's total energy consumption.
+De potentiele besparing wordt berekend als:
+- Maximaal 50% van het totale energieverbruik van het gebouw
+- Afhankelijk van de beschikbare warmtebronnen in de buurt
+
+---
+
+## Dashboard Panelen
+
+### Top 10 Potentiele Groei
+
+Rechtsonder in de kaart vindt u een panel met de 10 gebouwen met het hoogste besparingspotentieel. Klik op een gebouw in de lijst om ernaar toe te navigeren.
+
+### Legenda
+
+Linksonder vindt u de legenda die uitlegt wat de verschillende kleuren en symbolen betekenen.
+
+---
+
+## Beschikbare Kaartlagen
+
+### Achtergrondkaarten
+- **Light Map** - Lichte, overzichtelijke achtergrond (standaard)
+- **Street Map** - Gedetailleerde OpenStreetMap stijl
+- **Dark Map** - Donkere achtergrond (beter voor details)
+
+### Gebouwlagen
+- **RVB Buildings** - Alle RVB-panden met warmtescore
+- **Defensie Locaties** - Defensie-specifieke locaties
+
+### Warmtebronnen
+- **Warmte Bronnen (MT)** - Midden-temperatuur industriele warmtebronnen
+- **Datacenter Warmte** - Restwarmte van datacenters
+- **PDOK Restwarmte** - Industriele restwarmte via overheidsdata
+- **ThermoGIS Geothermie** - Aardwarmte potentie (heatmap weergave)
+
+<!-- - **Condens Warmte (Koelprocessen)** - Condenswarmte uit koelprocessen (DISABLED - uncomment to re-enable) -->
+
+### Infrastructuur
+- **Warmte Net Areas** - Bestaande warmtenetgebieden
+- **Netcongestie Gebieden** - Gebieden met netwerk-congestie
+- **Netherlands Boundary** - Landsgrens Nederland
+
+---
+
+## Veelgestelde Vragen
+
+### Waarom zie ik sommige gebouwen niet?
+Niet alle gebouwen hebben volledige data. Gebouwen zonder coordinaten of met ontbrekende gegevens worden niet weergegeven.
+
+### Wat betekent "Op bestaand warmtenet: Ja"?
+Dit betekent dat het gebouw binnen een gebied ligt waar al een warmtenet aanwezig is. Dit kan de implementatie van warmtebenutting vergemakkelijken.
+
+### Hoe actueel is de data?
+De data is afkomstig uit verschillende bronnen met verschillende update-frequenties. Raadpleeg de README voor specifieke bronvermeldingen.
+
+### Kan ik de kaart offline gebruiken?
+Ja, het HTML-bestand kan lokaal worden geopend. Sommige achtergrondkaarten vereisen echter een internetverbinding.
+
+---
+
+## Technische Ondersteuning
+
+Voor technische vragen of problemen, raadpleeg:
+- De [README.md](README.md) voor installatie en configuratie
+- Het projectteam voor data-gerelateerde vragen
+
+---
 
 ## Data Bronnen
 
 | Data | Bron |
 |------|------|
-| RVB Locaties | RVB dataset (punten en polygonen) |
-| MT Warmte | PBL - Download-MT-Warmtebronnen startanalyse (2024) |
-| Datacenter Warmte | RVO - Download-LT DataCentraWarmte |
-| Condens Warmte | RVO - Download-LT CondensWarmte uit Koelprocessen |
-| PDOK Restwarmte | PDOK WFS - service.pdok.nl/rvo/restwarmte |
-| Geothermie | ThermoGIS NetCDF - OVERVIEW_potential_recoverable_heat |
-| Netcongestie | Liander dataset |
-
-## Gebruik
-
-1. Voer het script uit: `python create_comprehensive_map.py`
-2. Open het gegenereerde HTML-bestand: `comprehensive_energy_map.html`
-3. Gebruik het lagenmenu (rechtsboven) om lagen aan/uit te zetten
-4. Klik op RVB-locaties voor gedetailleerde warmte-analyse
-
-## Vereisten
-
-- Python 3.x
-- folium
-- geopandas
-- pandas
-- numpy
-- requests
-- netCDF4
-
-Installeer met: `pip install folium geopandas pandas numpy requests netCDF4`
+| RVB Locaties | Rijksvastgoedbedrijf dataset |
+| MT Warmte | PBL - Startanalyse warmtebronnen (2024) |
+| Datacenter Warmte | RVO - DataCentra Warmte data |
+| PDOK Restwarmte | PDOK WFS - Overheids geodata service |
+| Geothermie | ThermoGIS - Aardwarmte potentie data |
+| Warmtenetten | CBS Buurtkaart 2020 |
+| Netcongestie | Liander congestiegebieden |
+<!-- | Condens Warmte | RVO - CondensWarmte uit Koelprocessen | (DISABLED) -->

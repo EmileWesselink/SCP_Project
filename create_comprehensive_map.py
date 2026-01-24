@@ -141,15 +141,15 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
     Components (all within 1km):
     - MT Warmte: MWth (thermal power in MW)
     - Datacenter: VERMOGEN where RESTW_TEMP > 60°C
-    - Condens Warmte: TJ_MTWarmte (TJ of MT heat via heat pump)
     - Geothermie: heat value at location (only for Defensie)
+    # - Condens Warmte: TJ_MTWarmte (TJ of MT heat via heat pump)  # DISABLED - uncomment to re-enable
 
     Returns: (raw_score, score_breakdown)
     """
     score_breakdown = {
         'mt_warmte_mwth': 0.0,
         'datacenter_vermogen': 0.0,
-        'condens_tj_mt': 0.0,
+        # 'condens_tj_mt': 0.0,  # DISABLED - uncomment to re-enable Condens Warmte
         'geothermie_heat': 0.0
     }
 
@@ -163,8 +163,9 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
                 temp = source.get('RESTW_TEMP_numeric', 0) or 0
                 if temp > 60:
                     score_breakdown['datacenter_vermogen'] += source.get('VERMOGEN_numeric', 0) or 0
-            elif source['type'] == 'Condens Warmte':
-                score_breakdown['condens_tj_mt'] += source.get('TJ_MTWarmte', 0) or 0
+            # DISABLED - uncomment to re-enable Condens Warmte
+            # elif source['type'] == 'Condens Warmte':
+            #     score_breakdown['condens_tj_mt'] += source.get('TJ_MTWarmte', 0) or 0
 
     # Add geothermie for Defensie locations
     if include_geothermie and geothermie_gdf is not None and len(geothermie_gdf) > 0:
@@ -185,7 +186,7 @@ def calculate_warmte_score(lat, lon, warmte_sources, geothermie_gdf=None, includ
     raw_score = (
         score_breakdown['mt_warmte_mwth'] * 1.0 +  # MW thermal
         score_breakdown['datacenter_vermogen'] * 1.0 +  # MW
-        score_breakdown['condens_tj_mt'] * 0.1 +  # TJ -> approximate MW equivalent
+        # score_breakdown['condens_tj_mt'] * 0.1 +  # TJ -> approximate MW equivalent  # DISABLED - uncomment to re-enable Condens Warmte
         score_breakdown['geothermie_heat'] * 0.01  # Scale down geothermie
     )
 
@@ -736,7 +737,7 @@ for idx, row in rvb_points.iterrows():
     # Build analytics HTML with power column
     sources_html = ""
     type_counts = {}
-    total_power = {'MT Warmte': 0, 'Datacenter': 0, 'Condens Warmte': 0}
+    total_power = {'MT Warmte': 0, 'Datacenter': 0}  # 'Condens Warmte': 0 - DISABLED
 
     for s in nearby_sources:
         type_counts[s['type']] = type_counts.get(s['type'], 0) + 1
@@ -747,8 +748,9 @@ for idx, row in rvb_points.iterrows():
             total_power['MT Warmte'] += s.get('MWth', 0) or 0
         elif s['type'] == 'Datacenter':
             total_power['Datacenter'] += s.get('VERMOGEN_numeric', 0) or 0
-        elif s['type'] == 'Condens Warmte':
-            total_power['Condens Warmte'] += s.get('TJ_MTWarmte', 0) or 0
+        # DISABLED - uncomment to re-enable Condens Warmte
+        # elif s['type'] == 'Condens Warmte':
+        #     total_power['Condens Warmte'] += s.get('TJ_MTWarmte', 0) or 0
 
         sources_html += f"""
         <tr style="border-bottom: 1px solid #eee;">
@@ -776,7 +778,6 @@ for idx, row in rvb_points.iterrows():
         <table style="width: 100%; margin-top: 4px;">
             <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
             <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
-            <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
         </table>
         <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
     </div>
@@ -986,7 +987,6 @@ for geojson_file in bovenregionaal_files:
                 <table style="width: 100%; margin-top: 4px;">
                     <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
                     <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
-                            <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
                     <tr style="color: #FF8C00;"><td>🌋 Geothermie:</td><td style="text-align: right;"><b>{score_breakdown['geothermie_heat']:.2f}</b></td></tr>
                 </table>
                 <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
@@ -1095,7 +1095,6 @@ for geojson_file in locatiespecifiek_files:
                 <table style="width: 100%; margin-top: 4px;">
                     <tr><td>🌡️ MT Warmte:</td><td style="text-align: right;"><b>{score_breakdown['mt_warmte_mwth']:.1f} MW</b></td></tr>
                     <tr><td>💻 Datacenter (>60°C):</td><td style="text-align: right;"><b>{score_breakdown['datacenter_vermogen']:.1f} MW</b></td></tr>
-                            <tr><td>❄️ Condens Warmte:</td><td style="text-align: right;"><b>{score_breakdown['condens_tj_mt']:.1f} TJ</b></td></tr>
                     <tr style="color: #FF8C00;"><td>🌋 Geothermie:</td><td style="text-align: right;"><b>{score_breakdown['geothermie_heat']:.2f}</b></td></tr>
                 </table>
                 <p style="margin: 6px 0 0 0; font-style: italic; color: #888;">Ruwe score: {raw_score:.2f} MW-eq</p>
