@@ -165,8 +165,6 @@ Linksonder vindt u de legenda die uitlegt wat de verschillende kleuren en symbol
 - **PDOK Restwarmte** - Industriele restwarmte via overheidsdata
 - **ThermoGIS Geothermie** - Aardwarmte potentie (heatmap weergave)
 
-<!-- - **Condens Warmte (Koelprocessen)** - Condenswarmte uit koelprocessen (DISABLED - uncomment to re-enable) -->
-
 ### Infrastructuur
 - **Warmte Net Areas** - Bestaande warmtenetgebieden
 - **Netcongestie Gebieden** - Gebieden met netwerk-congestie
@@ -209,4 +207,3 @@ Voor technische vragen of problemen, raadpleeg:
 | Geothermie | ThermoGIS - Aardwarmte potentie data |
 | Warmtenetten | CBS Buurtkaart 2020 |
 | Netcongestie | Liander congestiegebieden |
-<!-- | Condens Warmte | RVO - CondensWarmte uit Koelprocessen | (DISABLED) -->
