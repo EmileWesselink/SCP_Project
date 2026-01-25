@@ -1,91 +1,91 @@
-# SCP Project - Netcongestie Analyse Platform
+# SCP Project - Net Congestion Analytics Platform
 
-Een interactief kaartplatform voor het analyseren van warmtenetpotentieel en energieverbruik van Nederlandse overheidspanden (RVB), ter ondersteuning van beslissingen om netcongestie te verminderen door gebruik te maken van lokale warmtebronnen.
+An interactive map platform for analyzing heat network potential and energy consumption of Dutch government (RVB) properties, supporting decisions to reduce net congestion through local heat source utilization.
 
-## Snel Starten
+## Quick Start
 
 ```bash
-# 1. Clone de repository
+# 1. Clone the repository
 git clone https://github.com/your-username/SCP_Project.git
 cd SCP_Project
 
-# 2. Maak een virtuele omgeving
+# 2. Create a virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Op Windows: .venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# 3. Installeer afhankelijkheden
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Voer het script uit
+# 4. Run the script
 python create_comprehensive_map.py
 ```
 
-Het script genereert `comprehensive_energy_map.html` en opent dit in uw browser.
+The script generates `comprehensive_energy_map.html` and opens it in your browser.
 
 ---
 
-## Projectstructuur
+## Project Structure
 
 ```
 SCP_Project/
-├── create_comprehensive_map.py   # Hoofdscript - genereert de interactieve kaart
-├── requirements.txt              # Python afhankelijkheden
-├── README.md                     # Dit bestand (technische documentatie)
-├── MANUAL.md                     # Gebruikershandleiding (niet-technisch, Nederlands)
-├── comprehensive_energy_map.html # Gegenereerde output (na uitvoeren script)
+├── create_comprehensive_map.py   # Main script - generates the interactive map
+├── requirements.txt              # Python dependencies
+├── README.md                     # This file (technical documentation)
+├── MANUAL.md                     # User manual (non-technical)
+├── comprehensive_energy_map.html # Generated output (after running script)
 └── data/                         # Data directory
-    ├── Bouwwerken_netcongestie_data/   # RVB gebouwen shapefile
-    ├── Country_data/                    # Nederland landsgrens
-    ├── defensie_data/                   # Defensie VKA GeoJSON bestanden
-    ├── Netherlands_shapefile/           # NL administratieve grens
-    ├── tennet_data/                     # TenNet netcongestie data
-    ├── TUD_data/                        # Energieverbruik data (TU Delft)
-    ├── warmte_data/                     # Warmtebron datasets (CSV, NetCDF)
-    └── Warmte_net_data/                 # Warmtenet data (Excel, Shapefile)
+    ├── Bouwwerken_netcongestie_data/   # RVB buildings shapefile
+    ├── Country_data/                    # Netherlands boundary
+    ├── defensie_data/                   # Defensie VKA GeoJSON files
+    ├── Netherlands_shapefile/           # NL administrative boundary
+    ├── tennet_data/                     # TenNet grid congestion data
+    ├── TUD_data/                        # Energy consumption data (TU Delft)
+    ├── warmte_data/                     # Heat source datasets (CSV, NetCDF)
+    └── Warmte_net_data/                 # Heat network data (Excel, Shapefile)
 ```
 
 ---
 
-## Functionaliteiten
+## Features
 
-### Kaartlagen
-- **RVB Gebouwen** - Overheidspanden met energieverbruik analyse
-- **Defensie VKA** - Militaire locaties (Bovenregionaal & Locatiespecifiek)
-- **Warmtenet Gebieden** - Bestaande warmtenet dekkingspolygonen
-- **Warmtebronnen** - MT Warmte, Datacenters, Industriële restwarmte, Geothermie
+### Map Layers
+- **RVB Buildings** - Government properties with energy consumption analysis
+- **Defensie VKA** - Military facility locations (Bovenregionaal & Locatiespecifiek)
+- **Heat Network Areas** - Existing heat network coverage polygons
+- **Heat Sources** - MT Warmte, Datacenters, Industrial waste heat, Geothermal
 
-### Analyses per Gebouw
-- **Warmte Score (0-100)** - Warmtebesparingspotentieel gebaseerd op nabijgelegen bronnen (<1km)
-- **Oordeel Verbruik** - Huidige vs. potentiële verbruiksbeoordeling (Groen/Oranje/Rood)
-- **Op bestaand warmtenet** - Of het gebouw binnen een bestaand warmtenet ligt (Ja/Nee)
-- **Besparingspotentieel** - Geschatte MW besparing door lokale warmtebenutting
+### Analytics per Building
+- **Heat Score (0-100)** - Heat savings potential based on nearby sources (<1km)
+- **Consumption Rating** - Current vs. potential consumption assessment (Green/Orange/Red)
+- **On existing heat network** - Whether the building is within an existing heat network (Yes/No)
+- **Savings potential** - Estimated MW savings through local heat utilization
 
-### Dashboard Panelen
-- **Top 10 Potentiële Groei** - Gebouwen met hoogste warmtebesparingspotentieel
-- **Data Legenda** - Visuele gids voor kaartmarkeringen en kleuren
+### Dashboard Panels
+- **Top 10 Potential Growth** - Buildings with highest heat savings potential
+- **Data Legend** - Visual guide for map markers and colors
 
 ---
 
-## Databronnen
+## Data Sources
 
-| Dataset | Bron | Formaat | Locatie |
-|---------|------|---------|---------|
-| RVB Gebouwen | Rijksvastgoedbedrijf | Shapefile | `data/Bouwwerken_netcongestie_data/` |
-| Energieverbruik | TU Delft (TUD) | Excel | `data/TUD_data/` |
+| Dataset | Source | Format | Location |
+|---------|--------|--------|----------|
+| RVB Buildings | Rijksvastgoedbedrijf | Shapefile | `data/Bouwwerken_netcongestie_data/` |
+| Energy Consumption | TU Delft (TUD) | Excel | `data/TUD_data/` |
 | MT Warmte | PBL Startanalyse 2024 | CSV | `data/warmte_data/` |
-| Datacenter Warmte | RVO | CSV | `data/warmte_data/` |
-| PDOK Restwarmte | PDOK WFS Service | GeoJSON (live) | Opgehaald via API |
-| Geothermie | ThermoGIS | NetCDF | `data/warmte_data/` |
-| Warmtenetten | CBS Buurtkaart 2020 | Shapefile + Excel | `data/Warmte_net_data/` |
+| Datacenter Heat | RVO | CSV | `data/warmte_data/` |
+| PDOK Waste Heat | PDOK WFS Service | GeoJSON (live) | Fetched via API |
+| Geothermal | ThermoGIS | NetCDF | `data/warmte_data/` |
+| Heat Networks | CBS Buurtkaart 2020 | Shapefile + Excel | `data/Warmte_net_data/` |
 | Defensie VKA | Defensie | GeoJSON | `data/defensie_data/` |
-| Nederland Grens | GADM | Shapefile | `data/Country_data/` |
+| Netherlands Boundary | GADM | Shapefile | `data/Country_data/` |
 
 ---
 
-## Vereisten
+## Requirements
 
 - Python 3.8+
-- Afhankelijkheden (zie `requirements.txt`):
+- Dependencies (see `requirements.txt`):
 
 ```
 folium>=0.14.0
@@ -100,16 +100,16 @@ matplotlib>=3.7.0
 pyproj>=3.5.0
 ```
 
-Installeren met:
+Install with:
 ```bash
 pip install -r requirements.txt
 ```
 
 ---
 
-## Configuratie
+## Configuration
 
-Het script gebruikt relatieve paden vanaf de projectroot. Benodigde databestanden:
+The script uses relative paths from the project root. Required data files:
 
 ```
 data/Bouwwerken_netcongestie_data/Bouwwerken_netcongestie.shp
@@ -122,172 +122,172 @@ data/warmte_data/OVERVIEW_potential_recoverable_heat.nc
 
 ---
 
-## Nieuwe Datalagen Toevoegen
+## Adding New Data Layers
 
-Deze sectie legt uit hoe u nieuwe databronnen aan de kaart kunt toevoegen.
+This section explains how to add new data sources to the map.
 
-### Overzicht
+### Overview
 
-De kaart gebruikt [Folium](https://python-visualization.github.io/folium/) voor visualisatie. Elke laag is een `FeatureGroup` die aan/uit gezet kan worden via het lagenmenu.
+The map uses [Folium](https://python-visualization.github.io/folium/) for visualization. Each layer is a `FeatureGroup` that can be toggled on/off via the layer menu.
 
-### Stap 1: Bereid Uw Data Voor
+### Step 1: Prepare Your Data
 
-Uw data moet in een van deze formaten zijn:
-- **CSV** met coördinaten (X/Y of lat/lon kolommen)
-- **Shapefile** (.shp met .dbf, .shx, .prj)
+Your data must be in one of these formats:
+- **CSV** with coordinates (X/Y or lat/lon columns)
+- **Shapefile** (.shp with .dbf, .shx, .prj)
 - **GeoJSON** (.geojson)
-- **Excel** (.xlsx) met coördinaat kolommen
-- **NetCDF** (.nc) voor raster/grid data
+- **Excel** (.xlsx) with coordinate columns
+- **NetCDF** (.nc) for raster/grid data
 
-Plaats het databestand in de juiste `data/` subdirectory.
+Place the data file in the appropriate `data/` subdirectory.
 
-### Stap 2: Laad de Data
+### Step 2: Load the Data
 
-Voeg data-laadcode toe bovenaan `create_comprehensive_map.py` (rond regel 400-600 waar andere data wordt geladen):
+Add data loading code near the top of `create_comprehensive_map.py` (around line 400-600 where other data is loaded):
 
-#### Voor CSV bestanden:
+#### For CSV files:
 ```python
-# Laad uw CSV data
-my_data_file = 'data/warmte_data/Uw_Data_Bestand.csv'
+# Load your CSV data
+my_data_file = 'data/warmte_data/Your_Data_File.csv'
 if os.path.exists(my_data_file):
     my_df = pd.read_csv(my_data_file)
-    print(f"Geladen: {len(my_df)} records uit uw data")
+    print(f"Loaded: {len(my_df)} records from your data")
 ```
 
-#### Voor Shapefiles:
+#### For Shapefiles:
 ```python
-# Laad shapefile
-my_shapefile = 'data/uw_folder/uw_data.shp'
+# Load shapefile
+my_shapefile = 'data/your_folder/your_data.shp'
 if os.path.exists(my_shapefile):
     my_gdf = gpd.read_file(my_shapefile)
-    my_gdf = my_gdf.to_crs(epsg=4326)  # Converteer naar WGS84 lat/lon
-    print(f"Geladen: {len(my_gdf)} features uit shapefile")
+    my_gdf = my_gdf.to_crs(epsg=4326)  # Convert to WGS84 lat/lon
+    print(f"Loaded: {len(my_gdf)} features from shapefile")
 ```
 
-#### Voor GeoJSON:
+#### For GeoJSON:
 ```python
-# Laad GeoJSON
-my_geojson = 'data/uw_folder/uw_data.geojson'
+# Load GeoJSON
+my_geojson = 'data/your_folder/your_data.geojson'
 if os.path.exists(my_geojson):
     my_gdf = gpd.read_file(my_geojson)
-    print(f"Geladen: {len(my_gdf)} features uit GeoJSON")
+    print(f"Loaded: {len(my_gdf)} features from GeoJSON")
 ```
 
-### Stap 3: Converteer Coördinaten (indien nodig)
+### Step 3: Convert Coordinates (if needed)
 
-Als uw data Nederlandse RD-coördinaten gebruikt (EPSG:28992), converteer naar WGS84:
+If your data uses Dutch RD coordinates (EPSG:28992), convert to WGS84:
 
 ```python
 from pyproj import Transformer
 
-# Maak transformer van RD naar WGS84
+# Create transformer from RD to WGS84
 transformer = Transformer.from_crs("EPSG:28992", "EPSG:4326", always_xy=True)
 
-# Voor DataFrame met X, Y kolommen
+# For DataFrame with X, Y columns
 my_df['lon'], my_df['lat'] = transformer.transform(
     my_df['X'].values,
     my_df['Y'].values
 )
 ```
 
-### Stap 4: Maak een Feature Group
+### Step 4: Create a Feature Group
 
-Voeg een nieuwe FeatureGroup toe voor uw laag (rond regel 1200-1400):
+Add a new FeatureGroup for your layer (around line 1200-1400):
 
 ```python
-# ============ UW NIEUWE LAAG ============
-print("Toevoegen van Uw Nieuwe Laag...")
-my_layer_group = folium.FeatureGroup(name='🔶 Uw Laagnaam', show=False)
+# ============ YOUR NEW LAYER ============
+print("Adding Your New Layer...")
+my_layer_group = folium.FeatureGroup(name='🔶 Your Layer Name', show=False)
 
 for idx, row in my_gdf.iterrows():
-    # Maak popup HTML
+    # Create popup HTML
     popup_html = f"""
     <div style="font-family: Arial; width: 280px;">
         <h4 style="color: #FF6600; margin-bottom: 10px;">
-            🔶 Uw Data Type
+            🔶 Your Data Type
         </h4>
         <table style="width: 100%; font-size: 12px;">
-            <tr><td><b>Naam:</b></td><td>{row.get('Naam', 'N/B')}</td></tr>
-            <tr><td><b>Waarde:</b></td><td>{row.get('Waarde', 'N/B')}</td></tr>
+            <tr><td><b>Name:</b></td><td>{row.get('Name', 'N/A')}</td></tr>
+            <tr><td><b>Value:</b></td><td>{row.get('Value', 'N/A')}</td></tr>
         </table>
     </div>
     """
 
-    # Voeg marker toe aan de laag
+    # Add marker to the layer
     folium.CircleMarker(
         location=[row.geometry.y, row.geometry.x],
         radius=6,
         popup=folium.Popup(popup_html, max_width=300),
-        tooltip=f"Uw Data: {row.get('Naam', 'N/B')}",
-        color='#FF6600',      # Randkleur
-        fillColor='#FF9933',  # Vulkleur
+        tooltip=f"Your Data: {row.get('Name', 'N/A')}",
+        color='#FF6600',      # Border color
+        fillColor='#FF9933',  # Fill color
         fillOpacity=0.7,
         weight=2
     ).add_to(my_layer_group)
 
 my_layer_group.add_to(m)
-print(f"  Toegevoegd: {len(my_gdf)} markers aan Uw Laag")
+print(f"  Added: {len(my_gdf)} markers to Your Layer")
 ```
 
-### Stap 5: Opnemen in Score Berekening (Optioneel)
+### Step 5: Include in Score Calculation (Optional)
 
-Als uw data de warmtescore moet beïnvloeden, pas de `calculate_location_score()` functie aan:
+If your data should affect the heat score, modify the `calculate_location_score()` function:
 
-1. Voeg toe aan `all_warmte_sources` lijst tijdens data laden:
+1. Add to `all_warmte_sources` list during data loading:
 ```python
 all_warmte_sources.append({
     'lat': row.geometry.y,
     'lon': row.geometry.x,
-    'type': 'Uw Data Type',
-    'name': row.get('Naam', 'N/B'),
+    'type': 'Your Data Type',
+    'name': row.get('Name', 'N/A'),
     'color': '#FF6600',
-    'uw_waarde': row.get('Waarde', 0),
-    'power_display': f"{row.get('Waarde', 0):.1f} MW"
+    'your_value': row.get('Value', 0),
+    'power_display': f"{row.get('Value', 0):.1f} MW"
 })
 ```
 
-2. Voeg toe aan score_breakdown in `calculate_location_score()`:
+2. Add to score_breakdown in `calculate_location_score()`:
 ```python
 score_breakdown = {
     'mt_warmte_mwth': 0.0,
     'datacenter_vermogen': 0.0,
-    'uw_data_waarde': 0.0,  # Voeg dit toe
+    'your_data_value': 0.0,  # Add this
     'geothermie_heat': 0.0
 }
 ```
 
-3. Voeg verwerkingslogica toe:
+3. Add processing logic:
 ```python
-elif source['type'] == 'Uw Data Type':
-    score_breakdown['uw_data_waarde'] += source.get('uw_waarde', 0) or 0
+elif source['type'] == 'Your Data Type':
+    score_breakdown['your_data_value'] += source.get('your_value', 0) or 0
 ```
 
-4. Neem op in raw_score berekening:
+4. Include in raw_score calculation:
 ```python
 raw_score = (
     score_breakdown['mt_warmte_mwth'] * 1.0 +
     score_breakdown['datacenter_vermogen'] * 1.0 +
-    score_breakdown['uw_data_waarde'] * 0.5 +  # Pas gewicht aan indien nodig
+    score_breakdown['your_data_value'] * 0.5 +  # Adjust weight as needed
     score_breakdown['geothermie_heat'] * 0.01
 )
 ```
 
-### Stap 6: Werk Documentatie Bij
+### Step 6: Update Documentation
 
-Voeg uw nieuwe laag toe aan:
-- `MANUAL.md` - Gebruikersdocumentatie
-- `README.md` - Databronnen tabel
+Add your new layer to:
+- `MANUAL.md` - User documentation
+- `README.md` - Data sources table
 
-### Voorbeeld: Een Polygoonlaag Toevoegen
+### Example: Adding a Polygon Layer
 
-Voor polygoon data (zoals zones of gebieden):
+For polygon data (such as zones or areas):
 
 ```python
-# ============ UW POLYGOON LAAG ============
-my_polygon_group = folium.FeatureGroup(name='📍 Uw Zones', show=False)
+# ============ YOUR POLYGON LAYER ============
+my_polygon_group = folium.FeatureGroup(name='📍 Your Zones', show=False)
 
 for idx, row in my_zones_gdf.iterrows():
-    # Stijl de polygoon
+    # Style the polygon
     style = {
         'fillColor': '#FF6600',
         'color': '#CC5500',
@@ -295,30 +295,30 @@ for idx, row in my_zones_gdf.iterrows():
         'fillOpacity': 0.3
     }
 
-    popup_html = f"<b>{row.get('ZoneNaam', 'Zone')}</b><br>Oppervlakte: {row.get('Oppervlakte', 'N/B')}"
+    popup_html = f"<b>{row.get('ZoneName', 'Zone')}</b><br>Area: {row.get('Area', 'N/A')}"
 
     folium.GeoJson(
         row.geometry.__geo_interface__,
         style_function=lambda x, s=style: s,
         popup=folium.Popup(popup_html, max_width=300),
-        tooltip=row.get('ZoneNaam', 'Zone')
+        tooltip=row.get('ZoneName', 'Zone')
     ).add_to(my_polygon_group)
 
 my_polygon_group.add_to(m)
 ```
 
-### Voorbeeld: Een Heatmap Laag Toevoegen
+### Example: Adding a Heatmap Layer
 
-Voor dichtheid/intensiteit visualisatie:
+For density/intensity visualization:
 
 ```python
 from folium.plugins import HeatMap
 
-# Bereid heat data voor: lijst van [lat, lon, intensiteit]
-heat_data = [[row.geometry.y, row.geometry.x, row.get('intensiteit', 1)]
+# Prepare heat data: list of [lat, lon, intensity]
+heat_data = [[row.geometry.y, row.geometry.x, row.get('intensity', 1)]
              for idx, row in my_gdf.iterrows()]
 
-# Maak heatmap
+# Create heatmap
 HeatMap(
     heat_data,
     min_opacity=0.3,
@@ -326,122 +326,120 @@ HeatMap(
     radius=15,
     blur=10,
     gradient={0.4: 'blue', 0.65: 'lime', 1: 'red'}
-).add_to(folium.FeatureGroup(name='🔥 Warmte Intensiteit').add_to(m))
+).add_to(folium.FeatureGroup(name='🔥 Heat Intensity').add_to(m))
 ```
 
 ---
 
-## Uitgeschakelde Lagen
+## Disabled Layers
 
-Sommige lagen zijn uitgecommentarieerd in de code en kunnen opnieuw worden ingeschakeld:
+Some layers are commented out in the code and can be re-enabled:
 
-### Condens Warmte (Koelprocessen)
+### Condens Warmte (Cooling Processes)
 
-Deze laag is momenteel uitgeschakeld. Om opnieuw in te schakelen:
+This layer is currently disabled. To re-enable:
 
-1. Zoek naar `CONDENS WARMTE DATA COLLECTION` in `create_comprehensive_map.py`
-2. Verwijder commentaar van het data-laadblok (regels ~527-612)
-3. Zoek naar `CONDENS WARMTE LAYER`
-4. Verwijder commentaar van het laag-creatieblok (regels ~1249-1361)
-5. Verwijder commentaar van de score-berekeningsregels gemarkeerd met `# DISABLED`
+1. Search for `CONDENS WARMTE DATA COLLECTION` in `create_comprehensive_map.py`
+2. Uncomment the data loading block (lines ~527-612)
+3. Search for `CONDENS WARMTE LAYER`
+4. Uncomment the layer creation block (lines ~1249-1361)
+5. Uncomment the score calculation lines marked with `# DISABLED`
 
 ---
 
-## Score Berekening
+## Score Calculation
 
-### Formule
-
-```
-ruwe_score = (MT_Warmte_MWth × 1.0) + (Datacenter_Vermogen × 1.0) + (Geothermie_Heat × 0.01)
-```
-
-### Normalisatie
+### Formula
 
 ```
-genormaliseerde_score = 30 × log₁₀(ruwe_score + 1) + 10
+raw_score = (MT_Warmte_MWth × 1.0) + (Datacenter_Vermogen × 1.0) + (Geothermie_Heat × 0.01)
 ```
 
-Deze logaritmische schaling geeft:
-- 1 MW ≈ 30 punten
-- 10 MW ≈ 60 punten
-- 100 MW ≈ 90 punten
-
-### Score Interpretatie
-
-| Score | Label | Betekenis |
-|------:|-------|-----------|
-| 80+ | Uitstekend | Uitstekend warmtepotentieel |
-| 60-79 | Goed | Goed potentieel |
-| 40-59 | Matig | Matig potentieel |
-| 20-39 | Beperkt | Beperkt potentieel |
-| <20 | Minimaal | Minimaal potentieel |
-
-### Besparingsberekening
+### Normalization
 
 ```
-besparing = min(ruwe_score, totaal_verbruik × 0.5)
+normalized_score = 30 × log₁₀(raw_score + 1) + 10
 ```
 
-Besparingen zijn begrensd op 50% van het totale energieverbruik van het gebouw.
+This logarithmic scaling provides:
+- 1 MW ≈ 30 points
+- 10 MW ≈ 60 points
+- 100 MW ≈ 90 points
+
+### Score Interpretation
+
+| Score | Label | Meaning |
+|------:|-------|---------|
+| 80+ | Excellent | Excellent heat potential |
+| 60-79 | Good | Good potential |
+| 40-59 | Moderate | Moderate potential |
+| 20-39 | Limited | Limited potential |
+| <20 | Minimal | Minimal potential |
+
+### Savings Calculation
+
+```
+savings = min(raw_score, total_consumption × 0.5)
+```
+
+Savings are capped at 50% of the building's total energy consumption.
 
 ---
 
 ## Output
 
-Het script genereert:
-1. **comprehensive_energy_map.html** - Interactieve Folium kaart met alle lagen
-2. Console output met data-laadvoortgang en samenvattende statistieken
+The script generates:
+1. **comprehensive_energy_map.html** - Interactive Folium map with all layers
+2. Console output with data loading progress and summary statistics
 
 ---
 
-## Probleemoplossing
+## Troubleshooting
 
-### Veelvoorkomende Problemen
+### Common Issues
 
 **"FileNotFoundError: data/..."**
-- Controleer of de datastructuur overeenkomt met de verwachte indeling
-- Controleer of bestandspaden relatief zijn aan de projectroot
+- Verify that the data structure matches the expected layout
+- Check that file paths are relative to the project root
 
-**"CRS transformatie fout"**
-- Installeer pyproj: `pip install pyproj`
-- Controleer of het bron-CRS correct is gespecificeerd
+**"CRS transformation error"**
+- Install pyproj: `pip install pyproj`
+- Verify that the source CRS is correctly specified
 
-**"Geheugenfout bij grote datasets"**
-- Verminder het aantal punten door te samplen
-- Gebruik eenvoudigere geometrieën (centroïden in plaats van polygonen)
+**"Memory error with large datasets"**
+- Reduce the number of points by sampling
+- Use simpler geometries (centroids instead of polygons)
 
-**"Kaart laadt niet in browser"**
-- Probeer een andere browser (Chrome/Firefox aanbevolen)
-- Controleer of het HTML-bestand niet te groot is (>50MB kan problemen geven)
+**"Map doesn't load in browser"**
+- Try a different browser (Chrome/Firefox recommended)
+- Check if the HTML file is too large (>50MB may cause issues)
 
-### Prestatie Tips
+### Performance Tips
 
-- Stel `show=False` in voor zware lagen om initiële laadtijd te verbeteren
-- Gebruik `simplify()` op complexe geometrieën
-- Beperk het aantal markers per laag tot <5000
-
----
-
-## Bijdragen
-
-1. Fork de repository
-2. Maak een feature branch
-3. Maak uw wijzigingen
-4. Test de kaartgeneratie
-5. Dien een pull request in
+- Set `show=False` for heavy layers to improve initial load time
+- Use `simplify()` on complex geometries
+- Limit the number of markers per layer to <5000
 
 ---
 
-## Licentie
+## Contributing
 
-Intern project - neem contact op met projectbeheerders voor gebruiksvoorwaarden.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test the map generation
+5. Submit a pull request
 
 ---
 
-## Voor Niet-Technische Gebruikers
+## Non-Technical Information
 
-Zie [MANUAL.md](MANUAL.md) voor:
-- Hoe de kaart te gebruiken
-- Wat de symbolen en kleuren betekenen
-- Hoe de scores te interpreteren
-- Veelgestelde vragen
+See [MANUAL.md](MANUAL.md) for:
+- How to use the map
+- What the symbols and colors mean
+- How to interpret the scores
+- Frequently asked questions
+
+## License
+
+Unless stated otherwise, this project is licensed under the CC BY-NC-SA 4.0 License. See the LICENSE file for details.

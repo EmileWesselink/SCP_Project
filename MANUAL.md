@@ -1,209 +1,214 @@
-# Handleiding - RVB Warmtepotentie Kaart
+# User Manual - RVB Heat Potential Map
 
-## Wat is deze kaart?
+## What is this map?
 
-Deze interactieve kaart laat zien welke overheidsgebouwen (RVB-panden) het meeste kunnen besparen door gebruik te maken van warmtebronnen in de buurt. Denk aan restwarmte van datacenters, industriele processen of aardwarmte.
+This interactive map shows which government buildings (RVB properties) can save the most energy by utilizing nearby heat sources. Think of waste heat from datacenters, industrial processes, or geothermal energy.
 
-De kaart helpt bij het beantwoorden van de vraag: **"Welke gebouwen kunnen bijdragen aan het verminderen van netcongestie door lokale warmtebronnen te gebruiken?"**
-
----
-
-## Hoe gebruik je de kaart?
-
-### De kaart openen
-
-1. Open het bestand `comprehensive_energy_map.html` in uw webbrowser
-2. De kaart laadt automatisch met alle beschikbare lagen
-
-### Navigeren
-
-- **Inzoomen**: Scroll met uw muiswiel of gebruik de + knop linksboven
-- **Uitzoomen**: Scroll terug of gebruik de - knop
-- **Verplaatsen**: Klik en sleep de kaart
-
-### Lagen aan/uit zetten
-
-Rechtsboven in de kaart vindt u het **lagenmenu** (pictogram met gestapelde vierkantjes). Hier kunt u:
-- Verschillende kaartlagen aan- of uitzetten door het vakje aan te vinken
-- De achtergrondkaart wijzigen (licht, donker of stratenkaart)
+The map helps answer the question: **"Which buildings can contribute to reducing grid congestion by using local heat sources?"**
 
 ---
 
-## Wat betekenen de symbolen?
+## How to use the map?
 
-### RVB Gebouwen (driehoekjes)
+### Opening the map
 
-Elk driehoekje op de kaart is een RVB-gebouw. De kleur geeft aan hoe goed de locatie scoort voor warmtepotentie:
+1. Open the file `comprehensive_energy_map.html` in your web browser
+2. The map loads automatically with all available layers
 
-| Kleur | Betekenis |
-|-------|-----------|
-| 🟢 Groen | Uitstekend - Veel warmtebronnen in de buurt |
-| 🔵 Blauw | Goed - Goede warmtepotentie |
-| 🟡 Geel | Matig - Redelijke warmtepotentie |
-| 🟠 Oranje | Beperkt - Weinig warmtebronnen |
-| 🔴 Rood | Minimaal - Nauwelijks warmtebronnen beschikbaar |
+### Navigating
 
-### Warmtebronnen (cirkels)
+- **Zoom in**: Scroll with your mouse wheel or use the + button in the top left
+- **Zoom out**: Scroll back or use the - button
+- **Pan**: Click and drag the map
 
-Op de kaart ziet u ook verschillende warmtebronnen als gekleurde cirkels:
+### Toggling layers on/off
 
-| Symbool | Type | Wat is het? |
-|---------|------|-------------|
-| 🔴 Rode cirkel | MT Warmte | Midden-temperatuur warmtebronnen (industrie) |
-| 💻 Blauwe cirkel | Datacenter | Restwarmte van datacenters |
-| 🌋 Oranje vlak | Geothermie | Aardwarmte potentie (heatmap) |
-
-### Defensie locaties (speciale markers)
-
-Defensie-locaties worden apart weergegeven met:
-- **Paarse markers**: Bovenregionale defensielocaties
-- **Oranje markers**: Locatiespecifieke defensie-faciliteiten
+In the top right of the map you'll find the **layer menu** (icon with stacked squares). Here you can:
+- Toggle different map layers on or off by checking the box
+- Change the background map (light, dark, or street map)
 
 ---
 
-## Gebouwinformatie bekijken
+## What do the symbols mean?
 
-Klik op een gebouw (driehoekje) om een popup te openen met gedetailleerde informatie:
+### RVB Buildings (triangles)
 
-### Basisgegevens
+Each triangle on the map is an RVB building. The color indicates how well the location scores for heat potential:
 
-- **Objectnaam**: Naam van het gebouw
-- **Adres**: Locatie van het gebouw
-- **Eigenaar**: Wie het gebouw bezit
-- **Bouwwerkfunctie**: Waar het gebouw voor wordt gebruikt
+| Color | Meaning |
+|-------|---------|
+| 🟢 Green | Excellent - Many heat sources nearby |
+| 🔵 Blue | Good - Good heat potential |
+| 🟡 Yellow | Moderate - Reasonable heat potential |
+| 🟠 Orange | Limited - Few heat sources |
+| 🔴 Red | Minimal - Hardly any heat sources available |
 
-### Warmte Score
+### Heat Sources (circles)
 
-De warmtescore is een getal van 0 tot 100 dat aangeeft hoeveel warmte-besparingspotentieel het gebouw heeft:
+On the map you'll also see various heat sources as colored circles:
 
-| Score | Beoordeling | Wat betekent dit? |
-|------:|-------------|-------------------|
-| 80-100 | Uitstekend | Veel warmtebronnen dichtbij, groot besparingspotentieel |
-| 60-79 | Goed | Goede mogelijkheden voor warmtebenutting |
-| 40-59 | Matig | Redelijke mogelijkheden |
-| 20-39 | Beperkt | Weinig warmtebronnen beschikbaar |
-| 0-19 | Minimaal | Nauwelijks warmtebronnen in de buurt |
+| Symbol | Type | What is it? |
+|--------|------|-------------|
+| 🔴 Red circle | MT Warmte | Medium-temperature heat sources (industrial) |
+| 💻 Blue circle | Datacenter | Waste heat from datacenters |
+| 🌋 Orange area | Geothermal | Geothermal heat potential (heatmap) |
 
-### Verbruik Oordeel
+### Defensie locations (special markers)
 
-Het oordeel geeft aan hoe het huidige energieverbruik zich verhoudt tot de contractcapaciteit:
-
-| Kleur | Betekenis |
-|-------|-----------|
-| 🟢 Groen | Goed - Minder dan 80% van capaciteit gebruikt |
-| 🟠 Oranje | Waarschuwing - 80-100% van capaciteit gebruikt |
-| 🔴 Rood | Kritiek - Meer dan 100% van capaciteit (overschrijding) |
-
-### Warmtenet Status
-
-Bij elk gebouw ziet u of het op een bestaand warmtenet is aangesloten:
-- **Ja**: Het gebouw ligt binnen een warmtenetgebied
-- **Nee**: Het gebouw ligt buiten bestaande warmtenetten
-
-### Nabijgelegen Warmtebronnen
-
-Onderaan de popup vindt u een tabel met alle warmtebronnen binnen 1 kilometer, inclusief:
-- Type warmtebron
-- Naam
-- Vermogen of energie
-- Afstand tot het gebouw
+Defensie locations are displayed separately with:
+- **Purple markers**: Supra-regional defense locations
+- **Orange markers**: Location-specific defense facilities
 
 ---
 
-## De Score Uitgelegd
+## Viewing building information
 
-De warmtescore wordt berekend op basis van warmtebronnen binnen 1 kilometer van het gebouw:
+Click on a building (triangle) to open a popup with detailed information:
 
-### Componenten
+### Basic information
 
-| Component | Wat is het? | Eenheid |
-|-----------|-------------|---------|
-| MT Warmte | Midden-temperatuur industriele warmte | MW (megawatt) |
-| Datacenter | Restwarmte van datacenters (alleen >60°C) | MW |
-| Geothermie | Aardwarmte potentie (alleen voor Defensie) | - |
+- **Object name**: Name of the building
+- **Address**: Location of the building
+- **Owner**: Who owns the building
+- **Building function**: What the building is used for
 
-### Hoe werkt de berekening?
+### Heat Score
 
-1. **Ruwe score**: Alle warmtebronnen binnen 1 km worden opgeteld
-2. **Normalisatie**: De ruwe score wordt omgezet naar een schaal van 0-100
-3. **Logaritmische schaal**: Dit zorgt ervoor dat zowel kleine als grote hoeveelheden warmte goed worden weergegeven
+The heat score is a number from 0 to 100 indicating how much heat savings potential the building has:
 
-### Besparing
+| Score | Rating | What does this mean? |
+|------:|--------|----------------------|
+| 80-100 | Excellent | Many heat sources nearby, great savings potential |
+| 60-79 | Good | Good opportunities for heat utilization |
+| 40-59 | Moderate | Reasonable opportunities |
+| 20-39 | Limited | Few heat sources available |
+| 0-19 | Minimal | Hardly any heat sources nearby |
 
-De potentiele besparing wordt berekend als:
-- Maximaal 50% van het totale energieverbruik van het gebouw
-- Afhankelijk van de beschikbare warmtebronnen in de buurt
+### Consumption Rating
 
----
+The rating indicates how current energy consumption compares to contract capacity:
 
-## Dashboard Panelen
+| Color | Meaning |
+|-------|---------|
+| 🟢 Green | Good - Less than 80% of capacity used |
+| 🟠 Orange | Warning - 80-100% of capacity used |
+| 🔴 Red | Critical - More than 100% of capacity (exceeded) |
 
-### Top 10 Potentiele Groei
+### Heat Network Status
 
-Rechtsonder in de kaart vindt u een panel met de 10 gebouwen met het hoogste besparingspotentieel. Klik op een gebouw in de lijst om ernaar toe te navigeren.
+For each building you'll see if it's connected to an existing heat network:
+- **Yes**: The building is within a heat network area
+- **No**: The building is outside existing heat networks
 
-### Legenda
+### Nearby Heat Sources
 
-Linksonder vindt u de legenda die uitlegt wat de verschillende kleuren en symbolen betekenen.
-
----
-
-## Beschikbare Kaartlagen
-
-### Achtergrondkaarten
-- **Light Map** - Lichte, overzichtelijke achtergrond (standaard)
-- **Street Map** - Gedetailleerde OpenStreetMap stijl
-- **Dark Map** - Donkere achtergrond (beter voor details)
-
-### Gebouwlagen
-- **RVB Buildings** - Alle RVB-panden met warmtescore
-- **Defensie Locaties** - Defensie-specifieke locaties
-
-### Warmtebronnen
-- **Warmte Bronnen (MT)** - Midden-temperatuur industriele warmtebronnen
-- **Datacenter Warmte** - Restwarmte van datacenters
-- **PDOK Restwarmte** - Industriele restwarmte via overheidsdata
-- **ThermoGIS Geothermie** - Aardwarmte potentie (heatmap weergave)
-
-### Infrastructuur
-- **Warmte Net Areas** - Bestaande warmtenetgebieden
-- **Netcongestie Gebieden** - Gebieden met netwerk-congestie
-- **Netherlands Boundary** - Landsgrens Nederland
+At the bottom of the popup you'll find a table with all heat sources within 1 kilometer, including:
+- Type of heat source
+- Name
+- Power or energy
+- Distance to the building
 
 ---
 
-## Veelgestelde Vragen
+## The Score Explained
 
-### Waarom zie ik sommige gebouwen niet?
-Niet alle gebouwen hebben volledige data. Gebouwen zonder coordinaten of met ontbrekende gegevens worden niet weergegeven.
+The heat score is calculated based on heat sources within 1 kilometer of the building:
 
-### Wat betekent "Op bestaand warmtenet: Ja"?
-Dit betekent dat het gebouw binnen een gebied ligt waar al een warmtenet aanwezig is. Dit kan de implementatie van warmtebenutting vergemakkelijken.
+### Components
 
-### Hoe actueel is de data?
-De data is afkomstig uit verschillende bronnen met verschillende update-frequenties. Raadpleeg de README voor specifieke bronvermeldingen.
+| Component | What is it? | Unit |
+|-----------|-------------|------|
+| MT Warmte | Medium-temperature industrial heat | MW (megawatt) |
+| Datacenter | Waste heat from datacenters (only >60°C) | MW |
+| Geothermal | Geothermal heat potential (Defensie only) | - |
 
-### Kan ik de kaart offline gebruiken?
-Ja, het HTML-bestand kan lokaal worden geopend. Sommige achtergrondkaarten vereisen echter een internetverbinding.
+### How does the calculation work?
+
+1. **Raw score**: All heat sources within 1 km are summed up
+2. **Normalization**: The raw score is converted to a scale of 0-100
+3. **Logarithmic scale**: This ensures both small and large amounts of heat are displayed properly
+
+### Savings
+
+The potential savings are calculated as:
+- Maximum 50% of the building's total energy consumption
+- Depending on available heat sources nearby
 
 ---
 
-## Technische Ondersteuning
+## Dashboard Panels
 
-Voor technische vragen of problemen, raadpleeg:
-- De [README.md](README.md) voor installatie en configuratie
-- Het projectteam voor data-gerelateerde vragen
+### Top 10 Potential Growth
+
+In the bottom right of the map you'll find a panel with the 10 buildings with the highest savings potential. Click on a building in the list to navigate to it.
+
+### Legend
+
+In the bottom left you'll find the legend explaining what the different colors and symbols mean.
 
 ---
 
-## Data Bronnen
+## Available Map Layers
 
-| Data | Bron |
-|------|------|
-| RVB Locaties | Rijksvastgoedbedrijf dataset |
-| MT Warmte | PBL - Startanalyse warmtebronnen (2024) |
-| Datacenter Warmte | RVO - DataCentra Warmte data |
-| PDOK Restwarmte | PDOK WFS - Overheids geodata service |
-| Geothermie | ThermoGIS - Aardwarmte potentie data |
-| Warmtenetten | CBS Buurtkaart 2020 |
-| Netcongestie | Liander congestiegebieden |
+### Background maps
+- **Light Map** - Light, clear background (default)
+- **Street Map** - Detailed OpenStreetMap style
+- **Dark Map** - Dark background (better for details)
+
+### Building layers
+- **RVB Buildings** - All RVB properties with heat score
+- **Defensie Locations** - Defensie-specific locations
+
+### Heat sources
+- **Heat Sources (MT)** - Medium-temperature industrial heat sources
+- **Datacenter Heat** - Waste heat from datacenters
+- **PDOK Waste Heat** - Industrial waste heat via government data
+- **ThermoGIS Geothermal** - Geothermal heat potential (heatmap display)
+
+### Infrastructure
+- **Heat Network Areas** - Existing heat network areas
+- **Grid Congestion Areas** - Areas with network congestion
+- **Netherlands Boundary** - Country boundary of the Netherlands
+
+---
+
+## Frequently Asked Questions
+
+### Why don't I see some buildings?
+Not all buildings have complete data. Buildings without coordinates or with missing information are not displayed.
+
+### What does "On existing heat network: Yes" mean?
+This means the building is within an area where a heat network already exists. This can facilitate the implementation of heat utilization.
+
+### How current is the data?
+The data comes from various sources with different update frequencies. Consult the README for specific source references.
+
+### Can I use the map offline?
+Yes, the HTML file can be opened locally. However, some background maps require an internet connection.
+
+---
+
+## Technical Support
+
+For technical questions or issues, consult:
+- The [README.md](README.md) for installation and configuration
+- The project team for data-related questions
+
+---
+
+## Data Sources
+
+| Data | Source |
+|------|--------|
+| RVB Locations | Rijksvastgoedbedrijf dataset |
+| MT Warmte | PBL - Heat sources start analysis (2024) |
+| Datacenter Heat | RVO - DataCentra Heat data |
+| PDOK Waste Heat | PDOK WFS - Government geodata service |
+| Geothermal | ThermoGIS - Geothermal potential data |
+| Heat Networks | CBS Buurtkaart 2020 |
+| Grid Congestion | Liander congestion areas |
+
+
+## License
+
+Unless stated otherwise, this project is licensed under the CC BY-NC-SA 4.0 License. See the LICENSE file for details.
